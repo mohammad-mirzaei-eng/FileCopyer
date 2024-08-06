@@ -1,0 +1,12 @@
+D:\project\FileCopyer\bin\Release\FileCopyer.exe.config
+D:\project\FileCopyer\bin\Release\FileCopyer.exe
+D:\project\FileCopyer\bin\Release\FileCopyer.pdb
+D:\project\FileCopyer\obj\Release\FileCopyer.csproj.AssemblyReference.cache
+D:\project\FileCopyer\obj\Release\FileCopyer.CustomFolderBrowserForm.resources
+D:\project\FileCopyer\obj\Release\FileCopyer.Form1.resources
+D:\project\FileCopyer\obj\Release\FileCopyer.frmSetting.resources
+D:\project\FileCopyer\obj\Release\FileCopyer.Properties.Resources.resources
+D:\project\FileCopyer\obj\Release\FileCopyer.csproj.GenerateResource.cache
+D:\project\FileCopyer\obj\Release\FileCopyer.csproj.CoreCompileInputs.cache
+D:\project\FileCopyer\obj\Release\FileCopyer.exe
+D:\project\FileCopyer\obj\Release\FileCopyer.pdb
