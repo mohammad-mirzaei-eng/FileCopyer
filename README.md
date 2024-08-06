@@ -53,6 +53,9 @@ Special thanks to all contributors and users who have provided feedback and sugg
 Contact
 If you have any questions, feel free to reach out:
 
-Email: mthreat[dot]mob[at]gmail[dot]com
-GitHub: mohammad-mirzaei-eng
+
+**Email:** mthreat[dot]mob[at]gmail[dot]com
+
+**GitHub:** mohammad-mirzaei-eng
+
 Happy copying! 😊
