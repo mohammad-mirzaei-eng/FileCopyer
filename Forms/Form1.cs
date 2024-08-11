@@ -18,7 +18,6 @@ namespace FileCopyer.Forms
         {
             InitializeComponent();
             Task.Run(() => DisplayStatus()); // اجرای تابع نمایش وضعیت به صورت غیرهمزمان
-            //numericMaxThreads.Value = maxThreads; // مقدار پیش‌فرض
             semaphore = new SemaphoreSlim(maxThreads);
         }
         /// <summary>
@@ -76,7 +75,7 @@ namespace FileCopyer.Forms
         /// <summary>
         /// 
         /// </summary>
-        private object lockObj = new object(); // شیء برای قفل کردن عملیات‌ها
+        private readonly static object lockObj = new object(); // شیء برای قفل کردن عملیات‌ها
 
         /// <summary>
         /// 
@@ -298,6 +297,7 @@ namespace FileCopyer.Forms
             {
                 lock (lockObj)
                 {
+                    ///TODO newOrChangedFiles? add to newOrChangedFiles
                     totalFiles += newOrChangedFiles.Count; // تنها فایل‌های جدید را به totalFiles اضافه کنید
                 }
             }
@@ -362,10 +362,7 @@ namespace FileCopyer.Forms
                         }
                         else
                         {
-                            lock (lockObj)
-                            {
-                                copiedFiles++;
-                            }
+                            UpdateFileCounts(true);
                             filesCopied.TryAdd(file.FullName, true);
                         }
 
@@ -472,6 +469,7 @@ namespace FileCopyer.Forms
                     while ((bytesRead = await sourceStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
                         await destStream.WriteAsync(buffer, 0, bytesRead);
+                        ///TODO ADD state Bar for file
                     }
                 }
 
@@ -483,11 +481,8 @@ namespace FileCopyer.Forms
                     }
                     File.Move(tempFilePath, destFilePath);
                 }
+                    UpdateFileCounts(true);
 
-                lock (lockObj)
-                {
-                    copiedFiles++;
-                }
                 filesCopied.TryAdd(sourceFilePath, true);
             }
             catch (Exception ex)
@@ -570,8 +565,6 @@ namespace FileCopyer.Forms
 
             lock (lockObj)
             {
-                totalFiles = 0;
-                copiedFiles = 0;
                 errorList.Clear();
             }
             return Task.CompletedTask;
