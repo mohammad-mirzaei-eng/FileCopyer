@@ -44,6 +44,8 @@
             this.numMaxThread = new System.Windows.Forms.NumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
             this.ChkDeepCheck = new System.Windows.Forms.CheckBox();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
+            this.openFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.listboxcontext.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numMaxThread)).BeginInit();
             this.SuspendLayout();
@@ -101,14 +103,16 @@
             // listboxcontext
             // 
             this.listboxcontext.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripDell});
+            this.toolStripDell,
+            this.toolStripMenuItem1,
+            this.openFileToolStripMenuItem});
             this.listboxcontext.Name = "listboxcontext";
-            this.listboxcontext.Size = new System.Drawing.Size(167, 26);
+            this.listboxcontext.Size = new System.Drawing.Size(181, 76);
             // 
             // toolStripDell
             // 
             this.toolStripDell.Name = "toolStripDell";
-            this.toolStripDell.Size = new System.Drawing.Size(166, 22);
+            this.toolStripDell.Size = new System.Drawing.Size(180, 22);
             this.toolStripDell.Text = "حذف مسیر انتخابی";
             this.toolStripDell.Click += new System.EventHandler(this.toolStripDell_Click);
             // 
@@ -183,6 +187,18 @@
             this.ChkDeepCheck.UseVisualStyleBackColor = true;
             this.ChkDeepCheck.CheckedChanged += new System.EventHandler(this.ChkDeepCheck_CheckedChanged);
             // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
+            // 
+            // openFileToolStripMenuItem
+            // 
+            this.openFileToolStripMenuItem.Name = "openFileToolStripMenuItem";
+            this.openFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.openFileToolStripMenuItem.Text = "بارگذاری فایل مسیرها";
+            this.openFileToolStripMenuItem.Click += new System.EventHandler(this.openFileToolStripMenuItem_Click);
+            // 
             // frmSetting
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -230,5 +246,7 @@
         private System.Windows.Forms.NumericUpDown numMaxThread;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox ChkDeepCheck;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem openFileToolStripMenuItem;
     }
 }

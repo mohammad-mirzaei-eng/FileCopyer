@@ -19,12 +19,19 @@ namespace FileCopyer.Forms
         private SettingsModel settings = new SettingsModel();
         private List<FileModel> fileModels = new List<FileModel>();
 
-        private void LoadFileModels(bool fromfile)
+        private void LoadFileModels(bool fromfile,string file="")
         {
             if (fromfile)
             {
-                fileModels = BinarySerializationHelper.LoadFileModels();
-                settings=BinarySerializationHelper.LoadFileSettingsModels();
+                if (string.IsNullOrEmpty(file) && file.Length<=0)
+                {
+                    fileModels = BinarySerializationHelper.LoadFileModels();
+                }
+                else
+                {
+                    fileModels = BinarySerializationHelper.LoadFileModels(file);
+                }
+                settings = BinarySerializationHelper.LoadFileSettingsModels();
             }
             // نمایش لیست فایل‌ها در فرم یا کنترل‌های مناسب
             var queryFileModel = from o in fileModels select o.GetResourceName;
@@ -149,6 +156,24 @@ namespace FileCopyer.Forms
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void openFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog ofd=new OpenFileDialog())
+            {
+                ofd.Filter = "bin file|fileModels.bin";
+                ofd.Title = "فایل مسیرها";
+                ofd.Multiselect = false;
+                ofd.SupportMultiDottedExtensions = false;
+                ofd.ValidateNames = true;
+                ofd.CheckFileExists = true;
+                ofd.CheckPathExists = true;
+                if (ofd.ShowDialog()==DialogResult.OK)
+                {
+                    LoadFileModels(true,ofd.FileName);
+                }
+            }
         }
     }
 }

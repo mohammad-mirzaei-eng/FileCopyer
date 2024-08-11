@@ -70,6 +70,19 @@ namespace FileCopyer.Classes
                 BinaryFormatter formatter = new BinaryFormatter();
                 return (List<FileModel>)formatter.Deserialize(fs);
             }
+        }
+        
+        public static List<FileModel> LoadFileModels(string file)
+        {
+            if (!File.Exists(file))
+            {
+                return new List<FileModel>();
+            }
+            using (FileStream fs = new FileStream(file, FileMode.Open))
+            {
+                BinaryFormatter formatter = new BinaryFormatter();
+                return (List<FileModel>)formatter.Deserialize(fs);
+            }
         }  
         
         /// <summary>
