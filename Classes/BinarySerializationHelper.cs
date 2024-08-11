@@ -72,6 +72,11 @@ namespace FileCopyer.Classes
             }
         }
         
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         public static List<FileModel> LoadFileModels(string file)
         {
             if (!File.Exists(file))
