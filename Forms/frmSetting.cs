@@ -4,8 +4,9 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using FileCopyer.Classes;
 
-namespace FileCopyer
+namespace FileCopyer.Forms
 {
     public partial class frmSetting : Form
     {

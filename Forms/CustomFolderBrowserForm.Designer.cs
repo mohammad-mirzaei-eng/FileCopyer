@@ -1,4 +1,4 @@
-﻿namespace FileCopyer
+﻿namespace FileCopyer.Forms
 {
     partial class CustomFolderBrowserForm
     {

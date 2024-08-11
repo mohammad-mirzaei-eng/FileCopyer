@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FileCopyer
+namespace FileCopyer.Classes
 {
     [Serializable] // مشخص می‌کند که کلاس می‌تواند سریال‌سازی شود.
     public class SettingsModel
