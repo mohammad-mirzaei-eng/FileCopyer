@@ -18,30 +18,46 @@ namespace FileCopyer.Forms
         {
             InitializeComponent();
             Task.Run(() => DisplayStatus()); // اجرای تابع نمایش وضعیت به صورت غیرهمزمان
-            //numericMaxThreads.Value = maxThreads; // مقدار پیش‌فرض
             semaphore = new SemaphoreSlim(maxThreads);
         }
-        /// <summary>
-        /// TODO
-        /// </summary>
+/// <summary>
+/// 
+/// </summary>
         private bool CheckFileDeep=false;
-
+        
+        /// <summary>
+        /// 
+        /// </summary>
         private CancellationTokenSource cts;
 
+        /// <summary>
+        /// 
+        /// </summary>
         private CancellationToken cancellationToken;
 
-        // متغیرهای سراسری
+        /// <summary>
+        /// 
+        /// </summary>
         private string tempPath = string.Empty;
 
+        /// <summary>
+        /// 
+        /// </summary>
         private string tempFilePath = string.Empty;
 
+        /// <summary>
+        /// 
+        /// </summary>
         private string oldFilePath = string.Empty;
 
         /// <summary>
-        /// TODO
+        /// 
         /// </summary>
         private int maxThreads = 15; // مقدار پیش‌فرض
 
+        /// <summary>
+        /// 
+        /// </summary>
         private SemaphoreSlim semaphore; // سمفور برای مدیریت تعداد وظایف همزمان
         /// <summary>
         /// TODO
@@ -76,7 +92,7 @@ namespace FileCopyer.Forms
         /// <summary>
         /// 
         /// </summary>
-        private object lockObj = new object(); // شیء برای قفل کردن عملیات‌ها
+        private readonly static object lockObj = new object(); // شیء برای قفل کردن عملیات‌ها
 
         /// <summary>
         /// 
@@ -115,6 +131,14 @@ namespace FileCopyer.Forms
                 }
             }
         }
+        
+        private void UpdateFileCopyStatus(ProgressBar progress)
+        {
+            lock (lockObj)
+            {
+                progress.Value ++;
+            }
+        }
 
         // رویداد کلیک دکمه شروع/توقف
         /// <summary>
@@ -124,29 +148,36 @@ namespace FileCopyer.Forms
         /// <param name="e"></param>
         private void btnstart_Click(object sender, EventArgs e)
         {
-            if (fileModels.Count > 0)
+            try
             {
-                if (!runApp)
+                if (fileModels.Count > 0)
                 {
-                    (sender as Button).Text = "متوقف کردن";
-                    runApp = true;
+                    if (!runApp)
+                    {
+                        (sender as Button).Text = "متوقف کردن";
+                        runApp = true;
+                    }
+                    else
+                    {
+                        (sender as Button).Text = "اجرا";
+                        runApp = false;
+                        cts?.Cancel(); // لغو عملیات‌های در حال اجرا
+                        totalFiles = 0;
+                        copiedFiles = 0;
+                    }
+
+                    cts = new CancellationTokenSource(); // ایجاد `CancellationTokenSource` جدید
+                    cancellationToken = cts.Token;
+                    Task.Run(() => StartCopyProcess(runApp)); // شروع فرآیند کپی
                 }
                 else
                 {
-                    (sender as Button).Text = "اجرا";
-                    runApp = false;
-                    cts?.Cancel(); // لغو عملیات‌های در حال اجرا
-                    totalFiles = 0;
-                    copiedFiles = 0;
+                    MessageBox.Show("مسیر کپی فایل مشخص نشده است", "خطا", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
-
-                cts = new CancellationTokenSource(); // ایجاد `CancellationTokenSource` جدید
-                cancellationToken = cts.Token;
-                Task.Run(() => StartCopyProcess(runApp)); // شروع فرآیند کپی
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("مسیر کپی فایل مشخص نشده است", "خطا", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(ex.Message);
             }
         }
 
@@ -298,6 +329,7 @@ namespace FileCopyer.Forms
             {
                 lock (lockObj)
                 {
+                    ///TODO newOrChangedFiles? add to newOrChangedFiles
                     totalFiles += newOrChangedFiles.Count; // تنها فایل‌های جدید را به totalFiles اضافه کنید
                 }
             }
@@ -321,8 +353,8 @@ namespace FileCopyer.Forms
 
             foreach (FileInfo file in files)
             {
-                string tempPath = Path.Combine(destDir, file.Name);
-                string tempFilePath = tempPath + ".tmp"; // مسیر فایل موقت
+                tempPath = Path.Combine(destDir, file.Name);
+                tempFilePath = tempPath + ".tmp"; // مسیر فایل موقت
                 // اگر فایل قبلاً کپی شده، از کپی دوباره آن صرف‌نظر کنید
                 if (filesCopied.ContainsKey(file.FullName))
                 {
@@ -362,14 +394,10 @@ namespace FileCopyer.Forms
                         }
                         else
                         {
-                            lock (lockObj)
-                            {
-                                copiedFiles++;
-                            }
+                            UpdateFileCounts(true);
                             filesCopied.TryAdd(file.FullName, true);
-                        }
-
                         await CopyFileWithStream(file.FullName, tempPath, tempFile);
+                        }
 
                         if (VerifyFileCopy(file.FullName, tempPath))
                         {
@@ -415,7 +443,7 @@ namespace FileCopyer.Forms
 
                 if (sourceHash != destHash)
                 {
-                    string oldFilePath = tempPath + ".old";
+                    oldFilePath = tempPath + ".old";
                     try
                     {
                         int count = 1;
@@ -459,8 +487,8 @@ namespace FileCopyer.Forms
         /// <returns></returns>
         private async Task CopyFileWithStream(string sourceFilePath, string destFilePath, bool useTempFile)
         {
-            string tempFilePath = useTempFile ? destFilePath + ".temp" : destFilePath;
-
+            tempFilePath = useTempFile ? destFilePath + ".temp" : destFilePath;
+            progressBar1.Value = 0;
             try
             {
                 using (FileStream sourceStream = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read))
@@ -469,9 +497,12 @@ namespace FileCopyer.Forms
                     const int bufferSize = 1024 * 1024;
                     byte[] buffer = new byte[bufferSize];
                     int bytesRead;
+                    progressBar1.Maximum = (int)sourceStream.Length;
                     while ((bytesRead = await sourceStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
                         await destStream.WriteAsync(buffer, 0, bytesRead);
+                        UpdateFileCopyStatus(progressBar1);
+                        ///TODO ADD state Bar for file
                     }
                 }
 
@@ -483,11 +514,8 @@ namespace FileCopyer.Forms
                     }
                     File.Move(tempFilePath, destFilePath);
                 }
+                    UpdateFileCounts(true);
 
-                lock (lockObj)
-                {
-                    copiedFiles++;
-                }
                 filesCopied.TryAdd(sourceFilePath, true);
             }
             catch (Exception ex)
@@ -501,13 +529,17 @@ namespace FileCopyer.Forms
 
         // متد بررسی کپی موفق فایل
         /// <summary>
-        /// 
+        /// TODO because it is being used by another process.'
         /// </summary>
         /// <param name="sourceFile"></param>
         /// <param name="destFile"></param>
         /// <returns></returns>
         private bool VerifyFileCopy(string sourceFile, string destFile)
         {
+            if (!File.Exists(destFile))
+            {
+                return false;
+            }
             using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read))
             using (FileStream destStream = new FileStream(destFile, FileMode.Open, FileAccess.Read))
             {
@@ -570,8 +602,6 @@ namespace FileCopyer.Forms
 
             lock (lockObj)
             {
-                totalFiles = 0;
-                copiedFiles = 0;
                 errorList.Clear();
             }
             return Task.CompletedTask;
