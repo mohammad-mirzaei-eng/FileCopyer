@@ -50,6 +50,7 @@
             this.lblcopeid = new System.Windows.Forms.Label();
             this.lbltotalcopied = new System.Windows.Forms.Label();
             this.lblstatus = new System.Windows.Forms.Label();
+            this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.listboxcontext.SuspendLayout();
             this.notifycontext.SuspendLayout();
             this.SuspendLayout();
@@ -217,12 +218,20 @@
             this.lblstatus.TabIndex = 11;
             this.lblstatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // progressBar1
+            // 
+            this.progressBar1.Location = new System.Drawing.Point(315, 393);
+            this.progressBar1.Name = "progressBar1";
+            this.progressBar1.Size = new System.Drawing.Size(473, 23);
+            this.progressBar1.TabIndex = 12;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.lblstatus);
             this.Controls.Add(this.lbltotalcopied);
             this.Controls.Add(this.lblcopeid);
@@ -271,6 +280,7 @@
         private System.Windows.Forms.ToolStripMenuItem toolStripDell;
         private System.Windows.Forms.ToolStripMenuItem toolStripstatus;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        private System.Windows.Forms.ProgressBar progressBar1;
     }
 }
 
