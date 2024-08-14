@@ -20,9 +20,10 @@ namespace FileCopyer.Forms
             Task.Run(() => DisplayStatus()); // اجرای تابع نمایش وضعیت به صورت غیرهمزمان
             semaphore = new SemaphoreSlim(maxThreads);
         }
-/// <summary>
-/// 
-/// </summary>
+
+        /// <summary>
+        /// 
+        /// </summary>
         private bool CheckFileDeep=false;
         
         /// <summary>
@@ -131,14 +132,70 @@ namespace FileCopyer.Forms
                 }
             }
         }
-        
-        private void UpdateFileCopyStatus(ProgressBar progress)
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="progress"></param>
+        /// <param name="value"></param>
+        /// <param name="lbl"></param>
+        /// <param name="lbltext"></param>
+        //private void UpdateFileCopyStatus(System.Windows.Forms.ProgressBar progress,int value,Label lbl,string lbltext)
+        //{
+        //    if (progress.InvokeRequired)
+        //    {
+        //        progress.BeginInvoke(new Action(() => UpdateFileCopyStatus(progress, value,lbl, lbltext)));
+        //    }
+        //    else
+        //    {
+        //        progress.Value = value;
+        //        lbl.Text=lbltext;
+        //    }
+        //}
+        private void UpdateFileCopyStatus(System.Windows.Forms.ProgressBar progress, int value, Label lbl, string lbltext)
         {
-            lock (lockObj)
+            try
             {
-                progress.Value ++;
+                MessageBox.Show($"Updating progress: {value}, label: {lbltext}");
+
+                if (progress.InvokeRequired)
+                {
+                    progress.BeginInvoke(new Action(() => UpdateFileCopyStatus(progress, value, lbl, lbltext)));
+                }
+                else
+                {
+                    if (progress != null)
+                    {
+                        if (progress.Maximum >= value && value >= 0)
+                        {
+                            progress.Value = value;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Invalid progress value");
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Progress bar is null");
+                    }
+
+                    if (lbl != null)
+                    {
+                        lbl.Text = lbltext;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Label is null");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred: {ex.Message}");
             }
         }
+
 
         // رویداد کلیک دکمه شروع/توقف
         /// <summary>
@@ -488,20 +545,23 @@ namespace FileCopyer.Forms
         private async Task CopyFileWithStream(string sourceFilePath, string destFilePath, bool useTempFile)
         {
             tempFilePath = useTempFile ? destFilePath + ".temp" : destFilePath;
-            progressBar1.Value = 0;
+            //ProgressBar progressBar=new ProgressBar();
+            //progressBar.Value = 0;
             try
             {
-                using (FileStream sourceStream = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read))
-                using (FileStream destStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write))
+                using (FileStream sourceStream = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read,FileShare.ReadWrite))
+                using (FileStream destStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write,FileShare.ReadWrite))
                 {
                     const int bufferSize = 1024 * 1024;
                     byte[] buffer = new byte[bufferSize];
                     int bytesRead;
-                    progressBar1.Maximum = (int)sourceStream.Length;
+                    //progressBar.Maximum = (int)sourceStream.Length;
                     while ((bytesRead = await sourceStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
                         await destStream.WriteAsync(buffer, 0, bytesRead);
-                        UpdateFileCopyStatus(progressBar1);
+                        //UpdateFileCopyStatus(progressBar1, bytesRead,label2, tempFilePath);
+                       //UpdateFileCopyStatus(progressBar, 50, label2, "Updating...");
+                        
                         ///TODO ADD state Bar for file
                     }
                 }
@@ -540,8 +600,8 @@ namespace FileCopyer.Forms
             {
                 return false;
             }
-            using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read))
-            using (FileStream destStream = new FileStream(destFile, FileMode.Open, FileAccess.Read))
+            using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read,FileShare.ReadWrite))
+            using (FileStream destStream = new FileStream(destFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 string sourceHash = GetFileHash(sourceStream);
                 string destHash = GetFileHash(destStream);
@@ -811,6 +871,12 @@ namespace FileCopyer.Forms
                     LoadFileModels();
                 }
             }
+        }
+
+        private void label2_DoubleClick(object sender, EventArgs e)
+        {
+            progressBar1.Value = 50;
+            label2.Text = "Updating...";
         }
     }
 }
