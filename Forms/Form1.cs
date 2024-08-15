@@ -24,8 +24,8 @@ namespace FileCopyer.Forms
         /// <summary>
         /// 
         /// </summary>
-        private bool CheckFileDeep=false;
-        
+        private bool CheckFileDeep = false;
+
         /// <summary>
         /// 
         /// </summary>
@@ -118,17 +118,17 @@ namespace FileCopyer.Forms
         /// 
         /// </summary>
         /// <param name="isCopied"></param>
-        private void UpdateFileCounts(bool isCopied)
+        private void UpdateFileCounts(bool isCopied,int count=1)
         {
             lock (lockObj)
             {
                 if (isCopied)
                 {
-                    copiedFiles++;
+                    copiedFiles+=count;
                 }
                 else
                 {
-                    totalFiles++;
+                    totalFiles+=count;
                 }
             }
         }
@@ -386,8 +386,8 @@ namespace FileCopyer.Forms
             {
                 lock (lockObj)
                 {
-                    ///TODO newOrChangedFiles? add to newOrChangedFiles
-                    totalFiles += newOrChangedFiles.Count; // تنها فایل‌های جدید را به totalFiles اضافه کنید
+                    // تنها فایل‌های جدید را به totalFiles اضافه کنید
+                    UpdateFileCounts(false,totalFiles);
                 }
             }
 
@@ -411,7 +411,7 @@ namespace FileCopyer.Forms
             foreach (FileInfo file in files)
             {
                 tempPath = Path.Combine(destDir, file.Name);
-                tempFilePath = tempPath + ".tmp"; // مسیر فایل موقت
+                tempFilePath = tempPath + ".temporary"; // مسیر فایل موقت
                 // اگر فایل قبلاً کپی شده، از کپی دوباره آن صرف‌نظر کنید
                 if (filesCopied.ContainsKey(file.FullName))
                 {
@@ -453,7 +453,7 @@ namespace FileCopyer.Forms
                         {
                             UpdateFileCounts(true);
                             filesCopied.TryAdd(file.FullName, true);
-                        await CopyFileWithStream(file.FullName, tempPath, tempFile);
+                            await CopyFileWithStream(file.FullName, tempPath, tempFile);
                         }
 
                         if (VerifyFileCopy(file.FullName, tempPath))
@@ -549,8 +549,8 @@ namespace FileCopyer.Forms
             //progressBar.Value = 0;
             try
             {
-                using (FileStream sourceStream = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read,FileShare.ReadWrite))
-                using (FileStream destStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write,FileShare.ReadWrite))
+                using (FileStream sourceStream = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (FileStream destStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
                 {
                     const int bufferSize = 1024 * 1024;
                     byte[] buffer = new byte[bufferSize];
@@ -560,8 +560,8 @@ namespace FileCopyer.Forms
                     {
                         await destStream.WriteAsync(buffer, 0, bytesRead);
                         //UpdateFileCopyStatus(progressBar1, bytesRead,label2, tempFilePath);
-                       //UpdateFileCopyStatus(progressBar, 50, label2, "Updating...");
-                        
+                        //UpdateFileCopyStatus(progressBar, 50, label2, "Updating...");
+
                         ///TODO ADD state Bar for file
                     }
                 }
@@ -574,7 +574,7 @@ namespace FileCopyer.Forms
                     }
                     File.Move(tempFilePath, destFilePath);
                 }
-                    UpdateFileCounts(true);
+                UpdateFileCounts(true);
 
                 filesCopied.TryAdd(sourceFilePath, true);
             }
@@ -600,7 +600,7 @@ namespace FileCopyer.Forms
             {
                 return false;
             }
-            using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read,FileShare.ReadWrite))
+            using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (FileStream destStream = new FileStream(destFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 string sourceHash = GetFileHash(sourceStream);
@@ -708,7 +708,17 @@ namespace FileCopyer.Forms
                             Invoke(new Action(() =>
                             {
                                 totalbar.Maximum = totalFiles;
-                                totalbar.Value = copiedFiles;
+
+                                // اطمینان از اینکه copiedFiles در محدوده صحیح قرار دارد
+                                if (copiedFiles >= totalbar.Minimum && copiedFiles <= totalbar.Maximum)
+                                {
+                                    totalbar.Value = copiedFiles;
+                                }
+                                else
+                                {
+                                    // نمایش یک پیام یا لاگ برای دیباگ
+                                    MessageBox.Show($"copiedFiles is out of range: {copiedFiles}");
+                                }
                             }));
                         }
                         Invoke(new Action(() =>
@@ -753,7 +763,7 @@ namespace FileCopyer.Forms
             {
                 listBox1.DataSource = null;
             }
-            if (settingsModel!=null)
+            if (settingsModel != null)
             {
                 maxThreads = settingsModel.maxThreads;
                 CheckFileDeep = settingsModel.CheckFileDeep;
