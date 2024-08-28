@@ -6,31 +6,21 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 
 namespace FileCopyer.Classes
 {
-    internal static class BinarySerializationHelper
+    internal static class SerializationHelper
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        private static string GetFilePath(bool model)
+        private static string GetFilePath(bool isFileModel)
         {
             string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileCopyer");
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
-            return Path.Combine(directory, model ? "fileModels.bin" : "settings.bin");
+            return Path.Combine(directory, isFileModel ? "fileModels.bin" : "settings.bin");
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="fileModels"></param>
         public static void SaveFileModels(List<FileModel> fileModels)
         {
             string filePath = GetFilePath(true);
@@ -41,11 +31,7 @@ namespace FileCopyer.Classes
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="settings"></param>
-        public static void SaveSetting(SettingsModel settings)
+        public static void SaveSettings(SettingsModel settings)
         {
             string filePath = GetFilePath(false);
             using (FileStream fs = new FileStream(filePath, FileMode.Create))
@@ -55,10 +41,6 @@ namespace FileCopyer.Classes
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         public static List<FileModel> LoadFileModels()
         {
             string filePath = GetFilePath(true);
@@ -72,30 +54,8 @@ namespace FileCopyer.Classes
                 return (List<FileModel>)formatter.Deserialize(fs);
             }
         }
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="file"></param>
-        /// <returns></returns>
-        public static List<FileModel> LoadFileModels(string file)
-        {
-            if (!File.Exists(file))
-            {
-                return new List<FileModel>();
-            }
-            using (FileStream fs = new FileStream(file, FileMode.Open))
-            {
-                BinaryFormatter formatter = new BinaryFormatter();
-                return (List<FileModel>)formatter.Deserialize(fs);
-            }
-        }  
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public static SettingsModel LoadFileSettingsModels()
+
+        public static SettingsModel LoadSettings()
         {
             string filePath = GetFilePath(false);
             if (!File.Exists(filePath))
@@ -109,4 +69,5 @@ namespace FileCopyer.Classes
             }
         }
     }
+
 }

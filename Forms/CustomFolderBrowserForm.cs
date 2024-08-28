@@ -17,13 +17,13 @@ namespace FileCopyer.Forms
         public CustomFolderBrowserForm()
         {
             InitializeComponent();
-        }       
+        }
 
         private void ButtonBrowse_Click(object sender, EventArgs e)
         {
             using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
             {
-                folderDialog.SelectedPath=textBoxPath.Text;
+                folderDialog.SelectedPath = textBoxPath.Text;
                 if (folderDialog.ShowDialog() == DialogResult.OK)
                 {
                     textBoxPath.Text = folderDialog.SelectedPath;

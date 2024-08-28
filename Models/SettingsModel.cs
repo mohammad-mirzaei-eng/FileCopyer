@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FileCopyer.Classes
+namespace FileCopyer.Models
 {
     [Serializable] // مشخص می‌کند که کلاس می‌تواند سریال‌سازی شود.
     public class SettingsModel
@@ -12,7 +12,7 @@ namespace FileCopyer.Classes
         /// <summary>
         /// 
         /// </summary>
-        public int maxThreads { get; set; }
+        public int MaxThreads { get; set; }
 
         /// <summary>
         /// 

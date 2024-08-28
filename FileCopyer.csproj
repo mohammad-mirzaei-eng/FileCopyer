@@ -25,12 +25,13 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>full</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>it.ico</ApplicationIcon>
@@ -49,6 +50,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\BufferedCopyStrategy.cs" />
+    <Compile Include="Classes\CopyFileOperation.cs" />
+    <Compile Include="Classes\DefaultCopyStrategy.cs" />
+    <Compile Include="Classes\DeleteFileOperation.cs" />
+    <Compile Include="Classes\MoveFileOperation.cs" />
+    <Compile Include="Classes\SerializationHelper.cs" />
     <Compile Include="Forms\CustomFolderBrowserForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -56,7 +63,7 @@
       <DependentUpon>CustomFolderBrowserForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Classes\FileCopyManager.cs" />
-    <Compile Include="Classes\FileModel.cs" />
+    <Compile Include="Models\FileModel.cs" />
     <Compile Include="Forms\Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -69,10 +76,12 @@
     <Compile Include="Forms\frmSetting.Designer.cs">
       <DependentUpon>frmSetting.cs</DependentUpon>
     </Compile>
+    <Compile Include="Interface\IFileCopyStrategy.cs" />
+    <Compile Include="Interface\IFileOperation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Classes\BinarySerializationHelper.cs" />
-    <Compile Include="Classes\SettingsModel.cs" />
+    <Compile Include="Models\SettingsModel.cs" />
     <EmbeddedResource Include="Forms\CustomFolderBrowserForm.resx">
       <DependentUpon>CustomFolderBrowserForm.cs</DependentUpon>
     </EmbeddedResource>

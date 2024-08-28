@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using FileCopyer.Classes;
+using FileCopyer.Models;
 
 namespace FileCopyer.Forms
 {
@@ -46,7 +47,7 @@ namespace FileCopyer.Forms
 
             if (settings != null)
             {
-                numMaxThread.Value = settings.maxThreads;
+                numMaxThread.Value = settings.MaxThreads;
                 ChkDeepCheck.Checked = settings.CheckFileDeep;
             }
         }
@@ -145,7 +146,7 @@ namespace FileCopyer.Forms
 
         private void numMaxThread_ValueChanged(object sender, EventArgs e)
         {
-            settings.maxThreads = (int)numMaxThread.Value;
+            settings.MaxThreads = (int)numMaxThread.Value;
         }
 
         private void ChkDeepCheck_CheckedChanged(object sender, EventArgs e)

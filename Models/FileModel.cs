@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-namespace FileCopyer.Classes
+namespace FileCopyer.Models
 {
     [Serializable] // مشخص می‌کند که کلاس می‌تواند سریال‌سازی شود.
     public class FileModel
