@@ -54,6 +54,9 @@
     <Compile Include="Classes\CopyFileOperation.cs" />
     <Compile Include="Classes\DefaultCopyStrategy.cs" />
     <Compile Include="Classes\DeleteFileOperation.cs" />
+    <Compile Include="Classes\GenerateReportHelper.cs" />
+    <Compile Include="Classes\GetNewFilePathHelper.cs" />
+    <Compile Include="Classes\HashFileHelper.cs" />
     <Compile Include="Classes\MoveFileOperation.cs" />
     <Compile Include="Classes\SerializationHelper.cs" />
     <Compile Include="Forms\CustomFolderBrowserForm.cs">

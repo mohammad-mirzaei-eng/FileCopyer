@@ -39,11 +39,6 @@ namespace FileCopyer.Forms
             {
                 FileCopyManager.Instance.ExecuteOperation(operation);
             }
-
-            if (cancellationTokenSource != null)
-            {
-               // cancellationTokenSource.Cancel();
-            }
         }
 
         private void Form1_Load(object sender, EventArgs e)

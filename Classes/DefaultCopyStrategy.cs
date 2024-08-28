@@ -38,23 +38,9 @@ namespace FileCopyer.Classes
 
                 if (!File.Exists(tempPath))
                 {
-                    ProgressBar progressBar = new ProgressBar
-                    {
-                        Name = file.Name + "_ProgressBar",
-                        Minimum = 0,
-                        Value = 0,
-                        Dock = DockStyle.Top,
-                        Width = flowLayoutPanel.Width - 30
-                    };
-
-                    Label label = new Label
-                    {
-                        Name = file.Name + "_Label",
-                        Text = $"Preparing to copy {file.Name}...",
-                        Dock = DockStyle.Top,
-                        Width = flowLayoutPanel.Width - 30
-                    };
-
+                    ProgressBar progressBar;
+                    Label label;
+                    InitializeComponent(flowLayoutPanel.Width-30, tempPath, out progressBar, out label);
 
                     fileCopyTasks.Add(Task.Run(async () =>
                     {
@@ -88,6 +74,27 @@ namespace FileCopyer.Classes
                 string tempPath = Path.Combine(destFilePath, subdir.Name);
                 CopyFile(subdir.FullName, tempPath, flowLayoutPanel, cancellationToken);
             }
+        }
+
+        private static void InitializeComponent(int Width, string filename, out ProgressBar progressBar, out Label label)
+        {
+            progressBar = new ProgressBar
+            {
+                Name = filename + "_ProgressBar",
+                Minimum = 0,
+                Value = 0,
+                Dock = DockStyle.Top,
+                Width = Width
+            };
+            label = new Label
+            {
+                Name = filename + "_Label",
+                AutoEllipsis = true,
+                AutoSize = false,
+                Text = $"Preparing to copy {filename}...",
+                Dock = DockStyle.Top,
+                Width = Width
+            };
         }
 
         public async void CopyFileWithStream(string sourceFile, string destFile, ProgressBar progressBar, Label label, CancellationToken cancellationToken)
