@@ -35,11 +35,6 @@ namespace FileCopyer.Classes
         /// <summary>
         /// 
         /// </summary>
-        private readonly Label _label;
-        
-        /// <summary>
-        /// 
-        /// </summary>
         private readonly CancellationToken cancellationToken;
        
         

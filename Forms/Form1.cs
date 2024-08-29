@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using FileCopyer.Classes;
 using FileCopyer.Interface;
@@ -29,7 +30,7 @@ namespace FileCopyer.Forms
             foreach (var fileModel in files)
             {
                 // ایجاد و افزودن عملیات کپی به لیست
-                IFileOperation copyOperation = new CopyFileOperation(fileModel.Source, fileModel.Destination, strategy,flowLayoutPanel1, cancellationTokenSource.Token);
+                IFileOperation copyOperation = new CopyFileOperation(fileModel.Source, fileModel.Destination, strategy, flowLayoutPanel1, cancellationTokenSource.Token);
                 FileCopyManager.Instance.AddOperation(copyOperation);
             }
 
@@ -46,12 +47,36 @@ namespace FileCopyer.Forms
             cancellationTokenSource = new CancellationTokenSource();
             files = new List<FileModel>();
             FileModel fileModel = new FileModel();
-            fileModel.Source = @"\\192.168.110.22\Fileserver\IT\110.14\driver\acer 5750\download";
-            fileModel.Destination = @"D:\tmp";
+            fileModel.Source = @"D:\Me";
+            fileModel.Destination = @"D:\test";
             files.Add(fileModel);
-            var query=from o in files select o.GetResourceName;
-            listBox1.DataSource=query.ToList();
+            var query = from o in files select o.GetResourceName;
+            listBox1.DataSource = query.ToList();
         }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            var manager = FileCopyManager.Instance;
+
+            if (manager.IsCopyingInProgress())
+            {
+                var result = MessageBox.Show("مطمئن هستید می‌خواهید خروج کنید؟", "تایید خروج", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                if (result == DialogResult.No)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+
+                e.Cancel = true; // جلوگیری از بستن فوری برنامه
+                Task.Run(async () =>
+                {
+                    await manager.WaitForCopyCompletion();
+                    this.Invoke((MethodInvoker)(() => this.Close()));
+                });
+            }
+        }
+
     }
 
 }

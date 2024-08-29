@@ -17,7 +17,7 @@ namespace FileCopyer.Classes
             {
                 string errorReportBasePath = "ErrorReport_";
                 string errorReportPath = $"{errorReportBasePath}{date}.txt";
-                errorReportPath = GetNewFilePath(errorReportPath);
+                errorReportPath =new GetNewFilePathHelper().GetNewFilePath(errorReportPath);
                 using (StreamWriter errorWriter = new StreamWriter(errorReportPath, true))
                 {
                     foreach (var error in errorList)
