@@ -50,7 +50,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\BufferedCopyStrategy.cs" />
     <Compile Include="Classes\CopyFileOperation.cs" />
     <Compile Include="Classes\DefaultCopyStrategy.cs" />
     <Compile Include="Classes\DeleteFileOperation.cs" />

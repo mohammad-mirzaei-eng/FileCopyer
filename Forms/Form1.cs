@@ -30,7 +30,7 @@ namespace FileCopyer.Forms
             foreach (var fileModel in files)
             {
                 // ایجاد و افزودن عملیات کپی به لیست
-                IFileOperation copyOperation = new CopyFileOperation(fileModel.Source, fileModel.Destination, strategy, flowLayoutPanel1, cancellationTokenSource.Token);
+                IFileOperation copyOperation = new CopyFileOperation(fileModel.Source, fileModel.Destination, strategy, flowLayoutPanel1,totalbar, cancellationTokenSource.Token);
                 FileCopyManager.Instance.AddOperation(copyOperation);
             }
 
@@ -47,8 +47,10 @@ namespace FileCopyer.Forms
             cancellationTokenSource = new CancellationTokenSource();
             files = new List<FileModel>();
             FileModel fileModel = new FileModel();
-            fileModel.Source = @"D:\Me";
-            fileModel.Destination = @"D:\test";
+            //fileModel.Source = @"D:\Me";
+            //fileModel.Destination = @"D:\test";
+            fileModel.Source = @"\\192.168.110.22\Fileserver\IT\driver";
+            fileModel.Destination = @"D:\tmp";
             files.Add(fileModel);
             var query = from o in files select o.GetResourceName;
             listBox1.DataSource = query.ToList();
@@ -77,6 +79,10 @@ namespace FileCopyer.Forms
             }
         }
 
+        private void lbltotalcopied_Click(object sender, EventArgs e)
+        {
+            lbltotalcopied.Text = $"Copied {totalbar.Value.ToString()}/{totalbar.Maximum.ToString()} files.";
+        }
     }
 
 }

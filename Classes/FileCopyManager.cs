@@ -45,7 +45,7 @@ namespace FileCopyer.Classes
         }
 
         // Start copying files
-        public void StartCopy(string sourcePath, string destinationPath, FlowLayoutPanel flowLayoutPanel)
+        public void StartCopy(string sourcePath, string destinationPath, FlowLayoutPanel flowLayoutPanel,ProgressBar pgbtotal)
         {
             if (_copyingFiles.Count > 0)
             {
@@ -56,7 +56,7 @@ namespace FileCopyer.Classes
             _cancellationTokenSource = new CancellationTokenSource();
             Task.Run(() =>
             {
-                _copyStrategy.CopyFile(sourcePath, destinationPath, flowLayoutPanel, _cancellationTokenSource.Token);
+                _copyStrategy.CopyFile(sourcePath, destinationPath, flowLayoutPanel, pgbtotal, _cancellationTokenSource.Token);
             });
         }
 
