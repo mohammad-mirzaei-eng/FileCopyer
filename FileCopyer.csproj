@@ -65,6 +65,7 @@
       <DependentUpon>CustomFolderBrowserForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Classes\FileCopyManager.cs" />
+    <Compile Include="Interface\IProgressObserver.cs" />
     <Compile Include="Models\FileModel.cs" />
     <Compile Include="Forms\Form1.cs">
       <SubType>Form</SubType>

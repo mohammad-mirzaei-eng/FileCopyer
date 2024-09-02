@@ -14,8 +14,35 @@ namespace FileCopyer.Classes
     {
         private SemaphoreSlim semaphore = new SemaphoreSlim(15); // محدود کردن تعداد تردها
         private ConcurrentDictionary<string, bool> copyingFiles = new ConcurrentDictionary<string, bool>();
+        private List<IProgressObserver> observers = new List<IProgressObserver>();
+        int totalFiles = 0;
 
-        public async void CopyFile(string sourceFilePath, string destFilePath, FlowLayoutPanel flowLayoutPanel,ProgressBar pgbtotal, CancellationToken cancellationToken)
+        int copiedFiles = 0;
+
+        public void AddObserver(IProgressObserver observer)
+        {
+            observers.Add(observer);
+        }
+
+        private void NotifyFileCopied()
+        {                           
+            Interlocked.Increment(ref copiedFiles);
+            foreach (var observer in observers)
+            {
+                observer.OnFileCopied(copiedFiles, totalFiles);
+            }
+        }
+
+        private void NotifyCopyCompleted()
+        {
+            foreach (var observer in observers)
+            {
+                observer.OnCopyCompleted();
+            }
+        }
+
+
+        public async void CopyFile(string sourceFilePath, string destFilePath, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -24,9 +51,9 @@ namespace FileCopyer.Classes
 
             // لیست تمام فایل‌ها از پوشه‌ها و زیرپوشه‌ها
             List<string> filesToCopy = Directory.GetFiles(sourceFilePath, "*.*", SearchOption.AllDirectories).ToList();
-            int totalFiles = filesToCopy.Count;
+            totalFiles = filesToCopy.Count;
 
-            int copiedFiles = 0;
+            copiedFiles = 0;
 
             foreach (var dirPath in Directory.GetDirectories(sourceFilePath, "*", SearchOption.AllDirectories))
             {
@@ -102,8 +129,7 @@ namespace FileCopyer.Classes
 
                             await CopyFileWithStream(file, destFile, progressBar, label, cancellationToken);
 
-                            Interlocked.Increment(ref copiedFiles);
-                            Update_progressBar(pgbtotal,copiedFiles,totalFiles);
+                            NotifyCopyCompleted();
                             flowLayoutPanel.Invoke((MethodInvoker)(() =>
                             {
                                 label.Text = $"Copied {copiedFiles}/{totalFiles} files.";
@@ -153,6 +179,7 @@ namespace FileCopyer.Classes
         {
             try
             {
+
                 const int bufferSize = 1024 * 1024; // 1MB buffer size
                 using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, true))
                 using (FileStream destStream = new FileStream(destFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
@@ -163,19 +190,18 @@ namespace FileCopyer.Classes
 
                     while ((bytesRead = await sourceStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
                     {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
                         await destStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
                         totalBytesRead += bytesRead;
 
                         // بروزرسانی پروگرس بار و لیبل
                         Update_progressBar(progressBar, (int)totalBytesRead, (int)sourceStream.Length);
                         Update_Lable(label, $"Copying {Path.GetFileName(sourceFile)} ({totalBytesRead / 1024} KB of {sourceStream.Length / 1024} KB)");
-
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            break;
-                        }
                     }
-
+                    NotifyFileCopied();
                     Update_Lable(label, $"Copying {Path.GetFileName(sourceFile)} completed.");
                 }
             }

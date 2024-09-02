@@ -56,7 +56,7 @@ namespace FileCopyer.Classes
             _cancellationTokenSource = new CancellationTokenSource();
             Task.Run(() =>
             {
-                _copyStrategy.CopyFile(sourcePath, destinationPath, flowLayoutPanel, pgbtotal, _cancellationTokenSource.Token);
+                _copyStrategy.CopyFile(sourcePath, destinationPath, flowLayoutPanel, _cancellationTokenSource.Token);
             });
         }
 

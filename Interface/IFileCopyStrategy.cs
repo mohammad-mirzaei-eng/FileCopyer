@@ -10,7 +10,10 @@ namespace FileCopyer.Interface
 {
     public interface IFileCopyStrategy
     {
-        void CopyFile(string sourceFilePath, string destFilePath, FlowLayoutPanel flowLayoutPanel, ProgressBar pgbtotal, CancellationToken cancellationToken);
+        void AddObserver(IProgressObserver observer);
+       
+        void CopyFile(string sourceFilePath, string destFilePath, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken);
+        
         Task CopyFileWithStream(string sourceFile, string destFile, ProgressBar progressBar, Label label, CancellationToken cancellationToken);
     }
 

@@ -12,7 +12,7 @@ using FileCopyer.Models;
 
 namespace FileCopyer.Forms
 {
-    public partial class Form1 : Form
+    public partial class Form1 : Form,IProgressObserver
     {
         private List<FileModel> files;
         private CancellationTokenSource cancellationTokenSource;
@@ -22,15 +22,36 @@ namespace FileCopyer.Forms
             InitializeComponent();
         }
 
+        public void OnFileCopied(int copiedFiles, int totalFiles)
+        {
+            Invoke(new Action(() =>
+            {
+                // به‌روزرسانی UI با تعداد فایل‌های کپی‌شده
+                lblstatus.Text = $"Copied {copiedFiles}/{totalFiles} files.";
+                totalbar.Maximum = totalFiles;
+                totalbar.Value = copiedFiles;
+            }));
+        }
+
+        public void OnCopyCompleted()
+        {
+            Invoke(new Action(() =>
+            {
+                // به‌روزرسانی UI در صورت اتمام کپی
+                lblstatus.Text = "Copy completed!";
+            }));
+        }
+
         private void CopyFilesButton_Click(object sender, EventArgs e)
         {
             IFileCopyStrategy strategy = new DefaultCopyStrategy();
             cancellationTokenSource = new CancellationTokenSource();
+            strategy.AddObserver(this);
             // Load all file models and create copy operations
             foreach (var fileModel in files)
             {
                 // ایجاد و افزودن عملیات کپی به لیست
-                IFileOperation copyOperation = new CopyFileOperation(fileModel.Source, fileModel.Destination, strategy, flowLayoutPanel1,totalbar, cancellationTokenSource.Token);
+                IFileOperation copyOperation = new CopyFileOperation(fileModel.Source, fileModel.Destination, strategy, flowLayoutPanel1, cancellationTokenSource.Token);
                 FileCopyManager.Instance.AddOperation(copyOperation);
             }
 
@@ -47,10 +68,10 @@ namespace FileCopyer.Forms
             cancellationTokenSource = new CancellationTokenSource();
             files = new List<FileModel>();
             FileModel fileModel = new FileModel();
-            //fileModel.Source = @"D:\Me";
-            //fileModel.Destination = @"D:\test";
-            fileModel.Source = @"\\192.168.110.22\Fileserver\IT\driver";
-            fileModel.Destination = @"D:\tmp";
+            fileModel.Source = @"D:\Telegram Desktop";
+            fileModel.Destination = @"D:\test";
+            //fileModel.Source = @"\\192.168.110.22\Fileserver\IT\driver";
+            //fileModel.Destination = @"D:\tmp";
             files.Add(fileModel);
             var query = from o in files select o.GetResourceName;
             listBox1.DataSource = query.ToList();
