@@ -19,10 +19,11 @@ namespace FileCopyer.Classes
         private ConcurrentDictionary<string, bool> copyingFiles = new ConcurrentDictionary<string, bool>();
         private List<IProgressObserver> observers = new List<IProgressObserver>();
         int totalFiles = 0;
-
+        SettingsModel settingsModel = null;
         int copiedFiles = 0;
         public DefaultCopyStrategy(SettingsModel settings)
         {
+            this.settingsModel = settings;
             semaphore = new SemaphoreSlim(settings.MaxThreads);
             parallelOptions = new ParallelOptions();
             parallelOptions.MaxDegreeOfParallelism = settings.MaxThreads;
@@ -188,7 +189,8 @@ namespace FileCopyer.Classes
             try
             {
 
-                const int bufferSize = 1024 * 1024; // 1MB buffer size
+                int bufferSize = settingsModel.MaxBufferSize*( 1024 * 1024); // MB buffer size
+
                 using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, true))
                 using (FileStream destStream = new FileStream(destFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
                 {
