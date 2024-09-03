@@ -26,8 +26,6 @@ namespace FileCopyer.Forms
         {
             InitializeComponent();
             settingsModel = new SettingsModel();
-            settingsModel.MaxThreads = 15;
-            settingsModel.CheckFileDeep = false;
         }
 
         public void OnFileCopied(int copiedFiles, int totalFiles)

@@ -61,15 +61,23 @@ namespace FileCopyer.Classes
         /// <returns></returns>
         public static List<FileModel> LoadFileModels()
         {
-            string filePath = GetFilePath(true);
-            if (!File.Exists(filePath))
+            try
             {
-                return new List<FileModel>();
+                string filePath = GetFilePath(true);
+                if (!File.Exists(filePath))
+                {
+                    return new List<FileModel>();
+                }
+                using (FileStream fs = new FileStream(filePath, FileMode.Open))
+                {
+                    BinaryFormatter formatter = new BinaryFormatter();
+                    return (List<FileModel>)formatter.Deserialize(fs);
+                }
             }
-            using (FileStream fs = new FileStream(filePath, FileMode.Open))
+            catch (Exception ex)
             {
-                BinaryFormatter formatter = new BinaryFormatter();
-                return (List<FileModel>)formatter.Deserialize(fs);
+                System.Windows.Forms.MessageBox.Show("خطا در نمایش مسیر فایلها ، لطفا دوباره کانفیگ کنید","خطا",System.Windows.Forms.MessageBoxButtons.OK,System.Windows.Forms.MessageBoxIcon.Error);
+                return new List<FileModel>();
             }
         }
         
@@ -97,16 +105,25 @@ namespace FileCopyer.Classes
         /// <returns></returns>
         public static SettingsModel LoadFileSettingsModels()
         {
-            string filePath = GetFilePath(false);
-            if (!File.Exists(filePath))
+            try
             {
+                string filePath = GetFilePath(false);
+                if (!File.Exists(filePath))
+                {
+                    return new SettingsModel();
+                }
+                using (FileStream fs = new FileStream(filePath, FileMode.Open))
+                {
+                    BinaryFormatter formatter = new BinaryFormatter();
+                    return (SettingsModel)formatter.Deserialize(fs);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show("خطا در دریافت تنظیمات ، لطفا دوباره کانفیگ کنید", "خطا", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                 return new SettingsModel();
             }
-            using (FileStream fs = new FileStream(filePath, FileMode.Open))
-            {
-                BinaryFormatter formatter = new BinaryFormatter();
-                return (SettingsModel)formatter.Deserialize(fs);
-            }
+            
         }
     }
 }
