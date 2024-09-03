@@ -35,7 +35,7 @@ namespace FileCopyer.Forms
             Invoke(new Action(() =>
             {
                 // به‌روزرسانی UI با تعداد فایل‌های کپی‌شده
-                lblstatus.Text = $"Copied {copiedFiles}/{totalFiles} files.";
+                lbltotalcopied.Text = $"Copied {copiedFiles}/{totalFiles} files.";
                 totalbar.Maximum = totalFiles;
                 totalbar.Value = copiedFiles;
             }));
@@ -48,6 +48,7 @@ namespace FileCopyer.Forms
                 // به‌روزرسانی UI در صورت اتمام کپی
                 //lblstatus.Text = "Copy completed!";
                 lblstatus.BackColor = Color.LimeGreen;
+                toolStripstatus.BackColor = Color.LimeGreen;
             }));
         }
 
@@ -89,25 +90,54 @@ namespace FileCopyer.Forms
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
+            closeForm(e); // اجرای فرآیند بستن فرم
+            
+        }
+
+        private void closeForm(FormClosingEventArgs e)
+        {
             var manager = FileCopyManager.Instance;
+            manager.Form_FormClosing(this, e);
+            //if (manager.IsCopyingInProgress())
+            //{
+            //    var result = MessageBox.Show("مطمئن هستید می‌خواهید خروج کنید؟", "تایید خروج", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
-            if (manager.IsCopyingInProgress())
-            {
-                var result = MessageBox.Show("مطمئن هستید می‌خواهید خروج کنید؟", "تایید خروج", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            //    if (result == DialogResult.No)
+            //    {
+            //        e.Cancel = true;
+            //        return;
+            //    }
 
-                if (result == DialogResult.No)
-                {
-                    e.Cancel = true;
-                    return;
-                }
+            //    e.Cancel = true; // جلوگیری از بستن فوری برنامه
+            //    Task.Run(async () =>
+            //    {
+            //        await manager.WaitForCopyCompletion();
+            //        this.Invoke((MethodInvoker)(() => this.Close()));
+            //    });
+            //}
 
-                e.Cancel = true; // جلوگیری از بستن فوری برنامه
-                Task.Run(async () =>
-                {
-                    await manager.WaitForCopyCompletion();
-                    this.Invoke((MethodInvoker)(() => this.Close()));
-                });
-            }
+            //if (copyingFiles.Count > 0) // چک کردن وجود فایل‌های در حال کپی
+            //{
+            //    DialogResult result = MessageBox.Show("مطمئن هستید میخواهید خروج کنید؟", "اعلان", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+            //    if (result == DialogResult.No)
+            //    {
+            //        e.Cancel = true;
+            //        return;
+            //    }
+
+            //    isExiting = true; // تنظیم پرچم خروج
+            //    lblstatus.Text = "درحال خروج، لطفا کمی صبر کنید تا فایل بدرستی کپی شود";
+
+            //    cancellationTokenSource?.Cancel(); // لغو تمام عملیات‌های کپی
+
+            //    while (copyingFiles.Count > 0) // انتظار برای اتمام کپی
+            //    {
+            //        await Task.Delay(100); // استفاده از تاخیر غیرمسدود کننده
+            //    }
+            //}
+
+            //await GenerateReport(); // تولید گزارش
         }
 
         private void lbltotalcopied_Click(object sender, EventArgs e)
@@ -142,6 +172,58 @@ namespace FileCopyer.Forms
             else
             {
                 listBox1.DataSource = null;
+            }
+        }
+
+        private void Form1_SizeChanged(object sender, EventArgs e)
+        {
+            if (this.WindowState == FormWindowState.Minimized)
+            {
+                notifyIcon1.Visible = true;
+                this.Hide();
+            }
+            else if (this.WindowState == FormWindowState.Normal)
+            {
+                notifyIcon1.Visible = false;
+                this.Show();
+            }
+        }
+
+        private void showappcms_Click(object sender, EventArgs e)
+        {
+            notifyIcon1.Visible = false;
+            this.Show();
+        }
+
+        private void notifycontext_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            notifyIcon1.Visible = false;
+            this.WindowState = FormWindowState.Normal;
+            this.Focus();
+            this.Show();
+        }
+
+        private void exitappcms_Click(object sender, EventArgs e)
+        {
+            this.Close(); // بستن فرم
+        }
+
+        private void toolStripDell_Click(object sender, EventArgs e)
+        {
+            if (listBox1.SelectedItems != null && listBox1.SelectedItems.Count > 0)
+            {
+                if (MessageBox.Show("آیا از حذف مسیر انتخابی مطمئن هستید؟", "اخطار", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
+                {
+                    foreach (var listselect in listBox1.SelectedItems)
+                    {
+                        var item = from o in fileModels
+                                   where o.GetResourceName == listselect.ToString()
+                                   select o;
+                        fileModels.Remove(item.FirstOrDefault());
+                    }
+                    BinarySerializationHelper.SaveFileModels(fileModels);
+                    LoadFileModels();
+                }
             }
         }
     }

@@ -99,7 +99,7 @@ namespace FileCopyer.Classes
 
 
         // Handle the FormClosing event
-        public void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        public void Form_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (_copyingFiles.Count > 0)
             {

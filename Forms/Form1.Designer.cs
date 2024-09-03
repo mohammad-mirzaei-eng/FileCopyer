@@ -79,13 +79,14 @@
             this.listboxcontext.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripDell});
             this.listboxcontext.Name = "listboxcontext";
-            this.listboxcontext.Size = new System.Drawing.Size(167, 26);
+            this.listboxcontext.Size = new System.Drawing.Size(181, 48);
             // 
             // toolStripDell
             // 
             this.toolStripDell.Name = "toolStripDell";
-            this.toolStripDell.Size = new System.Drawing.Size(166, 22);
+            this.toolStripDell.Size = new System.Drawing.Size(180, 22);
             this.toolStripDell.Text = "حذف مسیر انتخابی";
+            this.toolStripDell.Click += new System.EventHandler(this.toolStripDell_Click);
             // 
             // label1
             // 
@@ -121,34 +122,37 @@
             this.exitappcms});
             this.notifycontext.Name = "contextMenuStrip1";
             this.notifycontext.Size = new System.Drawing.Size(150, 82);
+            this.notifycontext.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.notifycontext_MouseDoubleClick);
             // 
             // toolStripstatus
             // 
             this.toolStripstatus.Name = "toolStripstatus";
-            this.toolStripstatus.Size = new System.Drawing.Size(149, 22);
+            this.toolStripstatus.Size = new System.Drawing.Size(180, 22);
             this.toolStripstatus.Text = "وضعیت : False";
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(146, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(177, 6);
             // 
             // showappcms
             // 
             this.showappcms.Name = "showappcms";
-            this.showappcms.Size = new System.Drawing.Size(149, 22);
+            this.showappcms.Size = new System.Drawing.Size(180, 22);
             this.showappcms.Text = "نمایش برنامه";
+            this.showappcms.Click += new System.EventHandler(this.showappcms_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(146, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
             // 
             // exitappcms
             // 
             this.exitappcms.Name = "exitappcms";
-            this.exitappcms.Size = new System.Drawing.Size(149, 22);
+            this.exitappcms.Size = new System.Drawing.Size(180, 22);
             this.exitappcms.Text = "خروج";
+            this.exitappcms.Click += new System.EventHandler(this.exitappcms_Click);
             // 
             // totalbar
             // 
@@ -237,6 +241,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
+            this.SizeChanged += new System.EventHandler(this.Form1_SizeChanged);
             this.listboxcontext.ResumeLayout(false);
             this.notifycontext.ResumeLayout(false);
             this.ResumeLayout(false);
