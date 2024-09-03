@@ -16,10 +16,14 @@ namespace FileCopyer.Forms
     {
         private List<FileModel> files;
         private CancellationTokenSource cancellationTokenSource;
+        SettingsModel settingsModel;
 
         public Form1()
         {
             InitializeComponent();
+            settingsModel = new SettingsModel();
+            settingsModel.MaxThreads = 15;
+            settingsModel.CheckFileDeep = false;
         }
 
         public void OnFileCopied(int copiedFiles, int totalFiles)
@@ -45,7 +49,7 @@ namespace FileCopyer.Forms
 
         private void CopyFilesButton_Click(object sender, EventArgs e)
         {
-            IFileCopyStrategy strategy = new DefaultCopyStrategy();
+            IFileCopyStrategy strategy = new DefaultCopyStrategy(settingsModel);
             cancellationTokenSource = new CancellationTokenSource();
             strategy.AddObserver(this);
             // Load all file models and create copy operations

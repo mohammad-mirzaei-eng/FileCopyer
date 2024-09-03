@@ -1,4 +1,5 @@
 ﻿using FileCopyer.Interface;
+using FileCopyer.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,13 +14,19 @@ namespace FileCopyer.Classes
 {
     public class DefaultCopyStrategy : IFileCopyStrategy
     {
-        private SemaphoreSlim semaphore = new SemaphoreSlim(15); // محدود کردن تعداد تردها
+        private SemaphoreSlim semaphore; // محدود کردن تعداد تردها
+        ParallelOptions parallelOptions;
         private ConcurrentDictionary<string, bool> copyingFiles = new ConcurrentDictionary<string, bool>();
         private List<IProgressObserver> observers = new List<IProgressObserver>();
         int totalFiles = 0;
 
         int copiedFiles = 0;
-
+        public DefaultCopyStrategy(SettingsModel settings)
+        {
+            semaphore = new SemaphoreSlim(settings.MaxThreads);
+            parallelOptions = new ParallelOptions();
+            parallelOptions.MaxDegreeOfParallelism = settings.MaxThreads;
+        }
         public void AddObserver(IProgressObserver observer)
         {
             observers.Add(observer);
@@ -53,17 +60,22 @@ namespace FileCopyer.Classes
             // لیست تمام فایل‌ها از پوشه‌ها و زیرپوشه‌ها
             List<string> filesToCopy = Directory.GetFiles(sourceFilePath, "*.*", SearchOption.AllDirectories).ToList();
             totalFiles = filesToCopy.Count;
-
+            parallelOptions.CancellationToken = cancellationToken;
+           
             copiedFiles = 0;
-
-            foreach (var dirPath in Directory.GetDirectories(sourceFilePath, "*", SearchOption.AllDirectories))
+            await Task.Run(() =>
             {
-                string newDirPath = dirPath.Replace(sourceFilePath, destFilePath);
-                if (!Directory.Exists(newDirPath))
+                var directories = Directory.GetDirectories(sourceFilePath, "*", SearchOption.AllDirectories);
+                Parallel.ForEach(directories,parallelOptions, dirPath =>
                 {
-                    Directory.CreateDirectory(newDirPath);
-                }
-            }
+                    string newDirPath = dirPath.Replace(sourceFilePath, destFilePath);
+                    if (!Directory.Exists(newDirPath))
+                    {
+                        Directory.CreateDirectory(newDirPath);
+                    }
+                });
+            });
+
             List<Control> controls = new List<Control>();
             var progressBarDict = new Dictionary<string, ProgressBar>();
             var labelDict = new Dictionary<string, Label>();
