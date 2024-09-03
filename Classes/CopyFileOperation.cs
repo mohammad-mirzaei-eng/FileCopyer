@@ -1,4 +1,6 @@
 ﻿using FileCopyer.Interface;
+using FileCopyer.Interface.Design_Patterns.Strategy;
+using FileCopyer.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,16 +13,6 @@ namespace FileCopyer.Classes
 {
     public class CopyFileOperation : IFileOperation
     {
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        private readonly string _sourceFilePath;
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        private readonly string _destinationFilePath;
        
         /// <summary>
         /// 
@@ -35,21 +27,26 @@ namespace FileCopyer.Classes
         /// <summary>
         /// 
         /// </summary>
-        private readonly CancellationToken cancellationToken;
-       
-        
-        public CopyFileOperation(string sourceFilePath, string destFilePath, IFileCopyStrategy strategy, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken)
+        private readonly CancellationToken _cancellationToken;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private readonly List<FileModel> _fileModels;
+
+
+
+        public CopyFileOperation(List<FileModel> fileModels, IFileCopyStrategy strategy, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken)
         {
-            this._sourceFilePath = sourceFilePath;
-            this._destinationFilePath = destFilePath;
+            this._fileModels = fileModels;
             this._copyStrategy = strategy;
             this._flowLayout=flowLayoutPanel;
-            this.cancellationToken = cancellationToken;
+            this._cancellationToken = cancellationToken;
         }
 
         public void Execute()
         {
-            _copyStrategy.CopyFile(_sourceFilePath, _destinationFilePath, _flowLayout, cancellationToken);
+            _copyStrategy.CopyFile(_fileModels, _flowLayout, _cancellationToken);
         }
     }
 

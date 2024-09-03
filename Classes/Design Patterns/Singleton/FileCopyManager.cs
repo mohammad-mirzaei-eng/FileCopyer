@@ -5,8 +5,13 @@ using System.Threading;
 using System.Windows.Forms;
 using FileCopyer.Interface;
 using System.Threading.Tasks;
+using FileCopyer.Interface.Design_Patterns.Strategy;
+using FileCopyer.Classes.Design_Patterns.Strategy;
+using FileCopyer.Classes.Observer;
+using FileCopyer.Interface.Design_Patterns.Observer;
+using FileCopyer.Models;
 
-namespace FileCopyer.Classes
+namespace FileCopyer.Classes.Design_Patterns.Singleton
 {
     public class FileCopyManager
     {
@@ -16,72 +21,65 @@ namespace FileCopyer.Classes
         private CancellationTokenSource _cancellationTokenSource;
         private ConcurrentDictionary<string, bool> _copyingFiles = new ConcurrentDictionary<string, bool>();
 
-        private FileCopyManager() { }
-
         public static FileCopyManager Instance => _instance.Value;
 
-        // Add an operation to the list
-        public void AddOperation(IFileOperation operation)
+        private ConcurrentDictionary<List<FileModel>, IFileCopyStrategy> activeCopyStrategies = new ConcurrentDictionary<List<FileModel>, IFileCopyStrategy>();
+       
+        private CopyProgressNotifier notifier = new CopyProgressNotifier();
+
+        private FileCopyManager() { }
+
+        public void RegisterObserver(IProgressObserver observer)
         {
-            _operations.Add(operation);
+            notifier.AddObserver(observer);
         }
 
-        // Get all operations
-        public IEnumerable<IFileOperation> GetOperations()
+        public void UnregisterObserver(IProgressObserver observer)
         {
-            return _operations;
+            notifier.RemoveObserver(observer);
         }
 
-        // Execute a single operation
-        public void ExecuteOperation(IFileOperation operation)
+        // متد عمومی برای شروع عملیات کپی
+        public void StartCopy(List<FileModel> fileModels, FlowLayoutPanel flowLayoutPanel, ProgressBar pgbtotal, SettingsModel settings = null)
         {
-            operation.Execute();
-        }
-
-        // Set the copy strategy
-        public void SetCopyStrategy(IFileCopyStrategy strategy)
-        {
-            _copyStrategy = strategy;
-        }
-
-        // Start copying files
-        public void StartCopy(string sourcePath, string destinationPath, FlowLayoutPanel flowLayoutPanel,ProgressBar pgbtotal)
-        {
-            if (_copyingFiles.Count > 0)
+            if (IsCopyingInProgress())
             {
                 MessageBox.Show("فایلی در حال کپی شدن است لطفا کمی صبر کنید تا فایل کپی شود");
                 return;
             }
 
+            if (settings == null)
+            {
+                settings = new SettingsModel();
+            }
+            
+            var strategy = new DefaultCopyStrategy(settings, notifier);
+                activeCopyStrategies.TryAdd(fileModels, strategy);
+                _copyStrategy = strategy;
+
             _cancellationTokenSource = new CancellationTokenSource();
             Task.Run(() =>
             {
-                _copyStrategy.CopyFile(sourcePath, destinationPath, flowLayoutPanel, _cancellationTokenSource.Token);
+                _copyStrategy?.CopyFile(fileModels, flowLayoutPanel, _cancellationTokenSource.Token);
             });
         }
 
-        // Cancel the copy operation
-        public void CancelCopy()
+        // متد عمومی برای مدیریت وضعیت کپی
+        public void UpdateFileCopyStatus(string filePath, bool isCopying)
         {
-            _cancellationTokenSource.Cancel();
+            if (isCopying)
+            {
+                _copyingFiles.TryAdd(filePath, true);
+            }
+            else
+            {
+                _copyingFiles.TryRemove(filePath, out _);
+            }
         }
 
-        // Check if a file is being copied
         public bool IsCopyInProgress(string filePath)
         {
             return _copyingFiles.ContainsKey(filePath);
-        }
-
-        // Add a file to the copying list
-        public void AddFileToCopy(string filePath)
-        {
-            _copyingFiles.TryAdd(filePath, true);
-        }
-
-        // Remove a file from the copying list
-        public void RemoveFileFromCopy(string filePath)
-        {
-            _copyingFiles.TryRemove(filePath, out _);
         }
 
         public bool IsCopyingInProgress()
@@ -91,17 +89,16 @@ namespace FileCopyer.Classes
 
         public async Task WaitForCopyCompletion()
         {
-            while (_copyingFiles.Count > 0)
+            while (IsCopyingInProgress())
             {
                 await Task.Delay(500);
             }
         }
 
-
-        // Handle the FormClosing event
+        // مدیریت رویداد بستن فرم
         public void Form_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (_copyingFiles.Count > 0)
+            if (IsCopyingInProgress())
             {
                 DialogResult result = MessageBox.Show("مطمئن هستید میخواهید خروج کنید؟", "اعلان", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
@@ -110,7 +107,7 @@ namespace FileCopyer.Classes
                     e.Cancel = true;
                     Task.Run(() =>
                     {
-                        while (_copyingFiles.Count > 0)
+                        while (IsCopyingInProgress())
                         {
                             Thread.Sleep(500);
                         }
@@ -123,6 +120,12 @@ namespace FileCopyer.Classes
                     CancelCopy();
                 }
             }
+        }
+
+        // لغو عملیات کپی
+        public void CancelCopy()
+        {
+            _cancellationTokenSource?.Cancel();
         }
     }
 }

@@ -14,6 +14,7 @@ namespace FileCopyer.Models
             MaxBufferSize = 1;
             CheckFileDeep = false;
             MaxThreads = 5;
+            CreateParentPath = true;
         }
         /// <summary>
         /// 
@@ -29,5 +30,9 @@ namespace FileCopyer.Models
         /// 
         /// </summary>
         public int MaxBufferSize { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool CreateParentPath { get;  set; }
     }
 }

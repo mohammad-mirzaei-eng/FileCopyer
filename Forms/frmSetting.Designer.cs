@@ -49,6 +49,7 @@
             this.maxBufferSize = new System.Windows.Forms.NumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
             this.ChkDeepCheck = new System.Windows.Forms.CheckBox();
+            this.chkCreateParent = new System.Windows.Forms.CheckBox();
             this.listboxcontext.SuspendLayout();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numMaxThread)).BeginInit();
@@ -112,24 +113,24 @@
             this.toolStripMenuItem1,
             this.openFileToolStripMenuItem});
             this.listboxcontext.Name = "listboxcontext";
-            this.listboxcontext.Size = new System.Drawing.Size(177, 54);
+            this.listboxcontext.Size = new System.Drawing.Size(178, 54);
             // 
             // toolStripDell
             // 
             this.toolStripDell.Name = "toolStripDell";
-            this.toolStripDell.Size = new System.Drawing.Size(176, 22);
+            this.toolStripDell.Size = new System.Drawing.Size(177, 22);
             this.toolStripDell.Text = "حذف مسیر انتخابی";
             this.toolStripDell.Click += new System.EventHandler(this.toolStripDell_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(173, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(174, 6);
             // 
             // openFileToolStripMenuItem
             // 
             this.openFileToolStripMenuItem.Name = "openFileToolStripMenuItem";
-            this.openFileToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
+            this.openFileToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
             this.openFileToolStripMenuItem.Text = "بارگذاری فایل مسیرها";
             this.openFileToolStripMenuItem.Click += new System.EventHandler(this.openFileToolStripMenuItem_Click);
             // 
@@ -177,6 +178,7 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.chkCreateParent);
             this.groupBox1.Controls.Add(this.label4);
             this.groupBox1.Controls.Add(this.numMaxThread);
             this.groupBox1.Controls.Add(this.maxBufferSize);
@@ -185,7 +187,7 @@
             this.groupBox1.Location = new System.Drawing.Point(555, 190);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.groupBox1.Size = new System.Drawing.Size(233, 104);
+            this.groupBox1.Size = new System.Drawing.Size(233, 126);
             this.groupBox1.TabIndex = 8;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "تنظیمات پیشرفته";
@@ -238,6 +240,18 @@
             this.ChkDeepCheck.TabIndex = 15;
             this.ChkDeepCheck.Text = "برسی عمیق فایلها";
             this.ChkDeepCheck.UseVisualStyleBackColor = true;
+            // 
+            // chkCreateParent
+            // 
+            this.chkCreateParent.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.chkCreateParent.AutoSize = true;
+            this.chkCreateParent.Location = new System.Drawing.Point(83, 98);
+            this.chkCreateParent.Name = "chkCreateParent";
+            this.chkCreateParent.Size = new System.Drawing.Size(141, 17);
+            this.chkCreateParent.TabIndex = 18;
+            this.chkCreateParent.Text = "ساخت پوشه والد در مقصد";
+            this.chkCreateParent.UseVisualStyleBackColor = true;
+            this.chkCreateParent.CheckedChanged += new System.EventHandler(this.chkCreateParent_CheckedChanged);
             // 
             // frmSetting
             // 
@@ -292,5 +306,6 @@
         private System.Windows.Forms.NumericUpDown maxBufferSize;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox ChkDeepCheck;
+        private System.Windows.Forms.CheckBox chkCreateParent;
     }
 }

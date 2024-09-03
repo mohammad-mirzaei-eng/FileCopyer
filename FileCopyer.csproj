@@ -51,12 +51,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\CopyFileOperation.cs" />
-    <Compile Include="Classes\DefaultCopyStrategy.cs" />
+    <Compile Include="Classes\Design Patterns\Strategy\DefaultCopyStrategy.cs" />
     <Compile Include="Classes\DeleteFileOperation.cs" />
     <Compile Include="Classes\GenerateReportHelper.cs" />
     <Compile Include="Classes\GetNewFilePathHelper.cs" />
     <Compile Include="Classes\HashFileHelper.cs" />
     <Compile Include="Classes\MoveFileOperation.cs" />
+    <Compile Include="Classes\Design Patterns\Observer\CopyProgressNotifier.cs" />
     <Compile Include="Classes\SerializationHelper.cs" />
     <Compile Include="Forms\CustomFolderBrowserForm.cs">
       <SubType>Form</SubType>
@@ -64,8 +65,8 @@
     <Compile Include="Forms\CustomFolderBrowserForm.Designer.cs">
       <DependentUpon>CustomFolderBrowserForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Classes\FileCopyManager.cs" />
-    <Compile Include="Interface\IProgressObserver.cs" />
+    <Compile Include="Classes\Design Patterns\Singleton\FileCopyManager.cs" />
+    <Compile Include="Interface\Design Patterns\Observer\IProgressObserver.cs" />
     <Compile Include="Models\FileModel.cs" />
     <Compile Include="Forms\Form1.cs">
       <SubType>Form</SubType>
@@ -79,7 +80,7 @@
     <Compile Include="Forms\frmSetting.Designer.cs">
       <DependentUpon>frmSetting.cs</DependentUpon>
     </Compile>
-    <Compile Include="Interface\IFileCopyStrategy.cs" />
+    <Compile Include="Interface\Design Patterns\Strategy\IFileCopyStrategy.cs" />
     <Compile Include="Interface\IFileOperation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -119,6 +120,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="it.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Interface\Design Patterns\Factory Method\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

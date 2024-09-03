@@ -50,6 +50,7 @@ namespace FileCopyer.Forms
                 numMaxThread.Value = settings.MaxThreads;
                 ChkDeepCheck.Checked = settings.CheckFileDeep;
                 maxBufferSize.Value = settings.MaxBufferSize;
+                chkCreateParent.Checked = settings.CreateParentPath;
             }
         }
 
@@ -184,6 +185,11 @@ namespace FileCopyer.Forms
                     LoadFileModels(true,ofd.FileName);
                 }
             }
+        }
+
+        private void chkCreateParent_CheckedChanged(object sender, EventArgs e)
+        {
+            settings.CreateParentPath = chkCreateParent.Checked;
         }
     }
 }

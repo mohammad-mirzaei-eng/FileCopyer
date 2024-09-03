@@ -74,7 +74,7 @@ namespace FileCopyer.Classes
                     return (List<FileModel>)formatter.Deserialize(fs);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 System.Windows.Forms.MessageBox.Show("خطا در نمایش مسیر فایلها ، لطفا دوباره کانفیگ کنید","خطا",System.Windows.Forms.MessageBoxButtons.OK,System.Windows.Forms.MessageBoxIcon.Error);
                 return new List<FileModel>();
@@ -118,7 +118,7 @@ namespace FileCopyer.Classes
                     return (SettingsModel)formatter.Deserialize(fs);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 System.Windows.Forms.MessageBox.Show("خطا در دریافت تنظیمات ، لطفا دوباره کانفیگ کنید", "خطا", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                 return new SettingsModel();

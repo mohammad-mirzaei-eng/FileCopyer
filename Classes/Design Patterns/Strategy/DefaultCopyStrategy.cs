@@ -1,78 +1,93 @@
-﻿using FileCopyer.Interface;
+﻿using FileCopyer.Classes.Observer;
+using FileCopyer.Interface;
+using FileCopyer.Interface.Design_Patterns.Observer;
+using FileCopyer.Interface.Design_Patterns.Strategy;
 using FileCopyer.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace FileCopyer.Classes
+namespace FileCopyer.Classes.Design_Patterns.Strategy
 {
     public class DefaultCopyStrategy : IFileCopyStrategy
     {
         private SemaphoreSlim semaphore; // محدود کردن تعداد تردها
         ParallelOptions parallelOptions;
+
+        private CopyProgressNotifier progressNotifier;
         private ConcurrentDictionary<string, bool> copyingFiles = new ConcurrentDictionary<string, bool>();
         private List<IProgressObserver> observers = new List<IProgressObserver>();
+
         int totalFiles = 0;
         SettingsModel settingsModel = null;
         int copiedFiles = 0;
-        public DefaultCopyStrategy(SettingsModel settings)
+
+
+        public DefaultCopyStrategy(SettingsModel settings, CopyProgressNotifier notifier)
         {
             this.settingsModel = settings;
             semaphore = new SemaphoreSlim(settings.MaxThreads);
             parallelOptions = new ParallelOptions();
             parallelOptions.MaxDegreeOfParallelism = settings.MaxThreads;
-        }
-        public void AddObserver(IProgressObserver observer)
-        {
-            observers.Add(observer);
+            progressNotifier = notifier;
         }
 
-        private void NotifyFileCopied()
-        {                           
-            Interlocked.Increment(ref copiedFiles);
-            foreach (var observer in observers)
-            {
-                observer.OnFileCopied(copiedFiles, totalFiles);
-            }
-        }
-
-        private void NotifyCopyCompleted()
-        {
-            foreach (var observer in observers)
-            {
-                observer.OnCopyCompleted();
-            }
-        }
-
-
-        public async void CopyFile(string sourceFilePath, string destFilePath, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken)
+        public async void CopyFile(List<FileModel> fileModels, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
                 return;
             }
 
+            if (settingsModel.CreateParentPath)
+            {
+                for (int i = 0; i < fileModels.Count; i++)
+                {
+                    string sourceFolderName = new DirectoryInfo(fileModels[i].Source).Name;
+                    string destinationPath = Path.Combine(fileModels[i].Destination, sourceFolderName);
+                    if (!Directory.Exists(destinationPath))
+                    {
+                        Directory.CreateDirectory(destinationPath);
+                    }
+                    fileModels[i].Destination = destinationPath;
+                }
+            }
+
             // لیست تمام فایل‌ها از پوشه‌ها و زیرپوشه‌ها
-            List<string> filesToCopy = Directory.GetFiles(sourceFilePath, "*.*", SearchOption.AllDirectories).ToList();
+            List<string> filesToCopy = fileModels
+                .SelectMany(item => Directory.GetFiles(item.Source, "*.*", SearchOption.AllDirectories))
+                .ToList();
+
             totalFiles = filesToCopy.Count;
             parallelOptions.CancellationToken = cancellationToken;
-           
+            List<string> directories = fileModels
+                .SelectMany(item => Directory.GetDirectories(item.Source, "*", SearchOption.AllDirectories))
+                .ToList();
+
             copiedFiles = 0;
             await Task.Run(() =>
             {
-                var directories = Directory.GetDirectories(sourceFilePath, "*", SearchOption.AllDirectories);
-                Parallel.ForEach(directories,parallelOptions, dirPath =>
+                Parallel.ForEach(directories, parallelOptions, dirPath =>
                 {
-                    string newDirPath = dirPath.Replace(sourceFilePath, destFilePath);
-                    if (!Directory.Exists(newDirPath))
+                    foreach (var fileModel in fileModels)
                     {
-                        Directory.CreateDirectory(newDirPath);
+                        if (dirPath.StartsWith(fileModel.Source))
+                        {
+                            string relativePath = dirPath.Substring(fileModel.Source.Length + 1);
+                            string newDirPath = Path.Combine(fileModel.Destination, relativePath);
+
+                            if (!Directory.Exists(newDirPath))
+                            {
+                                Directory.CreateDirectory(newDirPath);
+                            }
+                        }
                     }
                 });
             });
@@ -83,18 +98,21 @@ namespace FileCopyer.Classes
 
             foreach (var file in filesToCopy)
             {
-                string newDirPath = file.Replace(sourceFilePath, destFilePath);
-                string relativePath = file.Substring(sourceFilePath.Length + 1);
-                string destFile = Path.Combine(destFilePath, relativePath);
-                ProgressBar progressBar;
-                Label label;
-                InitializeComponent(flowLayoutPanel, destFile, out progressBar, out label);
+                var fileModel = fileModels.FirstOrDefault(f => file.StartsWith(f.Source));
+                if (fileModel != null)
+                {
+                    string relativePath = file.Substring(fileModel.Source.Length + 1);
+                    string destFile = Path.Combine(fileModel.Destination, relativePath);
+                    ProgressBar progressBar;
+                    Label label;
+                    InitializeComponent(flowLayoutPanel, destFile, out progressBar, out label);
 
-                progressBarDict[file] = progressBar;
-                labelDict[file] = label;
+                    progressBarDict[file] = progressBar;
+                    labelDict[file] = label;
 
-                controls.Add(label);
-                controls.Add(progressBar);
+                    controls.Add(label);
+                    controls.Add(progressBar);
+                }
             }
 
             // افزودن کنترل‌ها به FlowLayoutPanel به صورت دسته‌ای
@@ -107,38 +125,42 @@ namespace FileCopyer.Classes
             List<Task> tasks = new List<Task>();
             foreach (var file in filesToCopy)
             {
-                string relativePath = file.Substring(sourceFilePath.Length + 1);
-                string destFile = Path.Combine(destFilePath, relativePath);
-
-                if (!File.Exists(destFile))
+                var fileModel = fileModels.FirstOrDefault(f => file.StartsWith(f.Source));
+                if (fileModel != null)
                 {
-                    tasks.Add(Task.Run(async () =>
+                    string relativePath = file.Substring(fileModel.Source.Length + 1);
+                    string destFile = Path.Combine(fileModel.Destination, relativePath);
+
+                    if (!File.Exists(destFile))
                     {
-                        await semaphore.WaitAsync();
-                        try
+                        tasks.Add(Task.Run(async () =>
                         {
-                            if (!copyingFiles.TryAdd(file, true))
+                            await semaphore.WaitAsync();
+                            try
                             {
-                                return;
+                                if (!copyingFiles.TryAdd(file, true))
+                                {
+                                    return;
+                                }
+
+                                var progressBar = progressBarDict[file];
+                                var label = labelDict[file];
+
+                                await CopyFileWithStream(file, destFile, progressBar, label, cancellationToken);
+
                             }
-
-                            var progressBar = progressBarDict[file];
-                            var label = labelDict[file];
-
-                            await CopyFileWithStream(file, destFile, progressBar, label, cancellationToken);
-
-                            NotifyCopyCompleted();
-                        }
-                        finally
-                        {
-                            semaphore.Release();
-                            copyingFiles.TryRemove(file, out _);
-                        }
-                    }, cancellationToken));
+                            finally
+                            {
+                                semaphore.Release();
+                                copyingFiles.TryRemove(file, out _);
+                            }
+                        }, cancellationToken));
+                    }
                 }
             }
 
             await Task.WhenAll(tasks);
+            progressNotifier.NotifyCopyCompleted();
         }
 
         private void InitializeComponent(FlowLayoutPanel flowLayoutPanel, string relativePath, out ProgressBar progressBar, out Label label)
@@ -168,7 +190,7 @@ namespace FileCopyer.Classes
 
         private void ProgressBar_Clicked(object sender, EventArgs e)
         {
-            if ((sender as ProgressBar).Tag!=null &&
+            if ((sender as ProgressBar).Tag != null &&
                 Directory.Exists((sender as ProgressBar).Tag.ToString()))
             {
                 Process.Start((sender as ProgressBar).Tag.ToString());
@@ -189,7 +211,7 @@ namespace FileCopyer.Classes
             try
             {
 
-                int bufferSize = settingsModel.MaxBufferSize*( 1024 * 1024); // MB buffer size
+                int bufferSize = settingsModel.MaxBufferSize * (1024 * 1024); // MB buffer size
 
                 using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, true))
                 using (FileStream destStream = new FileStream(destFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
@@ -211,7 +233,8 @@ namespace FileCopyer.Classes
                         Update_progressBar(progressBar, (int)totalBytesRead, (int)sourceStream.Length);
                         Update_Lable(label, $"Copying {Path.GetFileName(sourceFile)} ({totalBytesRead / 1024} KB of {sourceStream.Length / 1024} KB)");
                     }
-                    NotifyFileCopied();
+                    Interlocked.Increment(ref copiedFiles);
+                    progressNotifier.NotifyFileCopied(copiedFiles, totalFiles);
                     Update_Lable(label, $"Copying {Path.GetFileName(sourceFile)} completed. {copiedFiles}/{totalFiles} files.");
                 }
             }
