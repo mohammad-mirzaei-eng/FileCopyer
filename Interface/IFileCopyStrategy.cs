@@ -13,8 +13,6 @@ namespace FileCopyer.Interface
         void AddObserver(IProgressObserver observer);
        
         void CopyFile(string sourceFilePath, string destFilePath, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken);
-        
-        Task CopyFileWithStream(string sourceFile, string destFile, ProgressBar progressBar, Label label, CancellationToken cancellationToken);
     }
 
 }

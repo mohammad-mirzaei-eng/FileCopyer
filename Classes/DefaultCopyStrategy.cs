@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -72,25 +73,9 @@ namespace FileCopyer.Classes
                 string newDirPath = file.Replace(sourceFilePath, destFilePath);
                 string relativePath = file.Substring(sourceFilePath.Length + 1);
                 string destFile = Path.Combine(destFilePath, relativePath);
-
-                var progressBar = new ProgressBar
-                {
-                    Name = file + "_ProgressBar",
-                    Minimum = 0,
-                    Value = 0,
-                    Dock = DockStyle.Bottom,
-                    Width = flowLayoutPanel.Width - 30
-                };
-
-                var label = new Label
-                {
-                    Name = file + "_Label",
-                    AutoEllipsis = true,
-                    AutoSize = false,
-                    Text = $"Preparing to copy {Path.GetFileName(file)}...",
-                    Dock = DockStyle.Top,
-                    Width = flowLayoutPanel.Width - 30
-                };
+                ProgressBar progressBar;
+                Label label;
+                InitializeComponent(flowLayoutPanel, destFile, out progressBar, out label);
 
                 progressBarDict[file] = progressBar;
                 labelDict[file] = label;
@@ -130,10 +115,6 @@ namespace FileCopyer.Classes
                             await CopyFileWithStream(file, destFile, progressBar, label, cancellationToken);
 
                             NotifyCopyCompleted();
-                            flowLayoutPanel.Invoke((MethodInvoker)(() =>
-                            {
-                                label.Text = $"Copied {copiedFiles}/{totalFiles} files.";
-                            }));
                         }
                         finally
                         {
@@ -147,35 +128,50 @@ namespace FileCopyer.Classes
             await Task.WhenAll(tasks);
         }
 
-        private static void InitializeComponent(int width, string filename, out ProgressBar progressBar, out Label label)
+        private void InitializeComponent(FlowLayoutPanel flowLayoutPanel, string relativePath, out ProgressBar progressBar, out Label label)
         {
             progressBar = new ProgressBar
             {
-                Name = filename + "_ProgressBar",
+                Name = relativePath + "_ProgressBar",
                 Minimum = 0,
                 Value = 0,
+                Tag = Path.GetDirectoryName(relativePath),
                 Dock = DockStyle.Bottom,
-                Width = width
+                Width = flowLayoutPanel.Width - 30
             };
             label = new Label
             {
-                Name = filename + "_Label",
+                Name = relativePath + "_Label",
                 AutoEllipsis = true,
                 AutoSize = false,
-                Text = $"Preparing to copy {filename}...",
+                Text = $"Preparing to copy {Path.GetFileName(relativePath)}...",
+                Tag = Path.GetDirectoryName(relativePath),
                 Dock = DockStyle.Top,
-                Width = width
+                Width = flowLayoutPanel.Width - 30
             };
-            label.Click += Label_Click;
+            label.Click += Label_Clicked;
+            progressBar.Click += ProgressBar_Clicked;
         }
 
-        private static void Label_Click(object sender, EventArgs e)
+        private void ProgressBar_Clicked(object sender, EventArgs e)
         {
-            Clipboard.SetText((sender as Label).Text.ToString());
-            MessageBox.Show("Test");
+            if ((sender as ProgressBar).Tag!=null &&
+                Directory.Exists((sender as ProgressBar).Tag.ToString()))
+            {
+                Process.Start((sender as ProgressBar).Tag.ToString());
+            }
         }
 
-        public async Task CopyFileWithStream(string sourceFile, string destFile, ProgressBar progressBar, Label label, CancellationToken cancellationToken)
+        private void Label_Clicked(object sender, EventArgs e)
+        {
+            if ((sender as Label).Tag != null &&
+               Directory.Exists((sender as Label).Tag.ToString()))
+            {
+                Process.Start((sender as Label).Tag.ToString());
+            }
+        }
+
+        private async Task CopyFileWithStream(string sourceFile, string destFile, ProgressBar progressBar, Label label, CancellationToken cancellationToken)
         {
             try
             {
@@ -202,7 +198,7 @@ namespace FileCopyer.Classes
                         Update_Lable(label, $"Copying {Path.GetFileName(sourceFile)} ({totalBytesRead / 1024} KB of {sourceStream.Length / 1024} KB)");
                     }
                     NotifyFileCopied();
-                    Update_Lable(label, $"Copying {Path.GetFileName(sourceFile)} completed.");
+                    Update_Lable(label, $"Copying {Path.GetFileName(sourceFile)} completed. {copiedFiles}/{totalFiles} files.");
                 }
             }
             catch (OperationCanceledException ex)

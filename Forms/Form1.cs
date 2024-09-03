@@ -38,7 +38,8 @@ namespace FileCopyer.Forms
             Invoke(new Action(() =>
             {
                 // به‌روزرسانی UI در صورت اتمام کپی
-                lblstatus.Text = "Copy completed!";
+                //lblstatus.Text = "Copy completed!";
+                lblstatus.BackColor = Color.LimeGreen;
             }));
         }
 
@@ -68,10 +69,10 @@ namespace FileCopyer.Forms
             cancellationTokenSource = new CancellationTokenSource();
             files = new List<FileModel>();
             FileModel fileModel = new FileModel();
-            fileModel.Source = @"D:\Telegram Desktop";
-            fileModel.Destination = @"D:\test";
-            //fileModel.Source = @"\\192.168.110.22\Fileserver\IT\driver";
-            //fileModel.Destination = @"D:\tmp";
+            //fileModel.Source = @"D:\Telegram Desktop";
+            //fileModel.Destination = @"D:\test";
+            fileModel.Source = @"\\192.168.110.22\Fileserver\IT\driver";
+            fileModel.Destination = @"D:\tmp";
             files.Add(fileModel);
             var query = from o in files select o.GetResourceName;
             listBox1.DataSource = query.ToList();
