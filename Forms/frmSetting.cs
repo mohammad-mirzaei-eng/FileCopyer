@@ -49,6 +49,7 @@ namespace FileCopyer.Forms
             {
                 numMaxThread.Value = settings.MaxThreads;
                 ChkDeepCheck.Checked = settings.CheckFileDeep;
+                maxBufferSize.Value = settings.MaxBufferSize;
             }
         }
 
@@ -70,6 +71,10 @@ namespace FileCopyer.Forms
             using (CustomFolderBrowserForm folderForm = new CustomFolderBrowserForm())
             {
                 folderForm.Text = "مسیر فایل مبدا را انتخاب کنید";
+                if (Directory.Exists(textBox1.Text))
+                {
+                    folderForm.SelectedPath=textBox1.Text;
+                }
                 if (folderForm.ShowDialog() == DialogResult.OK)
                 {
                     textBox1.Text = folderForm.SelectedPath;
@@ -82,6 +87,10 @@ namespace FileCopyer.Forms
         {
             using (CustomFolderBrowserForm folderForm = new CustomFolderBrowserForm())
             {
+                if (Directory.Exists(textBox2.Text))
+                {
+                    folderForm.SelectedPath = textBox2.Text;
+                }
                 folderForm.Text = "مسیر فایل مقصد را انتخاب کنید";
                 if (folderForm.ShowDialog() == DialogResult.OK)
                 {

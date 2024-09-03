@@ -14,9 +14,13 @@ namespace FileCopyer.Forms
 {
     public partial class Form1 : Form,IProgressObserver
     {
-        private List<FileModel> files;
+        //private List<FileModel> files;
         private CancellationTokenSource cancellationTokenSource;
         SettingsModel settingsModel;
+        /// <summary>
+        /// 
+        /// </summary>
+        private List<FileModel> fileModels = new List<FileModel>(); // لیست مدل‌های فایل
 
         public Form1()
         {
@@ -53,7 +57,7 @@ namespace FileCopyer.Forms
             cancellationTokenSource = new CancellationTokenSource();
             strategy.AddObserver(this);
             // Load all file models and create copy operations
-            foreach (var fileModel in files)
+            foreach (var fileModel in fileModels)
             {
                 // ایجاد و افزودن عملیات کپی به لیست
                 IFileOperation copyOperation = new CopyFileOperation(fileModel.Source, fileModel.Destination, strategy, flowLayoutPanel1, cancellationTokenSource.Token);
@@ -71,15 +75,16 @@ namespace FileCopyer.Forms
         private void Form1_Load(object sender, EventArgs e)
         {
             cancellationTokenSource = new CancellationTokenSource();
-            files = new List<FileModel>();
-            FileModel fileModel = new FileModel();
+            //fileModels = new List<FileModel>();
+            //FileModel fileModel = new FileModel();
             //fileModel.Source = @"D:\Telegram Desktop";
             //fileModel.Destination = @"D:\test";
-            fileModel.Source = @"\\192.168.110.22\Fileserver\IT\driver";
-            fileModel.Destination = @"D:\tmp";
-            files.Add(fileModel);
-            var query = from o in files select o.GetResourceName;
-            listBox1.DataSource = query.ToList();
+            //fileModel.Source = @"\\192.168.110.22\Fileserver\IT\driver";
+            //fileModel.Destination = @"D:\tmp";
+            //fileModels.Add(fileModel);
+            //var query = from o in fileModels select o.GetResourceName;
+            //listBox1.DataSource = query.ToList();
+            LoadFileModels(); // بارگذاری مدل‌های فایل
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -108,6 +113,36 @@ namespace FileCopyer.Forms
         private void lbltotalcopied_Click(object sender, EventArgs e)
         {
             lbltotalcopied.Text = $"Copied {totalbar.Value.ToString()}/{totalbar.Maximum.ToString()} files.";
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            using (frmSetting frmSetting = new frmSetting())
+            {
+                frmSetting.ShowDialog();
+                LoadFileModels();
+            }
+        }
+
+        // متد بارگذاری مدل‌های فایل
+        /// <summary>
+        /// 
+        /// </summary>
+        private void LoadFileModels()
+        {
+            fileModels = BinarySerializationHelper.LoadFileModels();
+            settingsModel = BinarySerializationHelper.LoadFileSettingsModels();
+            // نمایش لیست فایل‌ها در فرم یا کنترل‌های مناسب
+
+            var query = from o in fileModels select o.GetResourceName;
+            if (query != null && query.Count() > 0)
+            {
+                listBox1.DataSource = query.ToList();
+            }
+            else
+            {
+                listBox1.DataSource = null;
+            }
         }
     }
 

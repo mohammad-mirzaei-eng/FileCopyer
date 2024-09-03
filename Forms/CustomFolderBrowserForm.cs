@@ -12,7 +12,7 @@ namespace FileCopyer.Forms
 {
     public partial class CustomFolderBrowserForm : Form
     {
-        public string SelectedPath { get; private set; }
+        public string SelectedPath { get; set; }
 
         public CustomFolderBrowserForm()
         {

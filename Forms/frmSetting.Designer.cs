@@ -37,17 +37,22 @@
             this.listBox1 = new System.Windows.Forms.ListBox();
             this.listboxcontext = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.toolStripDell = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
+            this.openFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.button3 = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.label4 = new System.Windows.Forms.Label();
             this.numMaxThread = new System.Windows.Forms.NumericUpDown();
+            this.maxBufferSize = new System.Windows.Forms.NumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
             this.ChkDeepCheck = new System.Windows.Forms.CheckBox();
-            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
-            this.openFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.listboxcontext.SuspendLayout();
+            this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numMaxThread)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.maxBufferSize)).BeginInit();
             this.SuspendLayout();
             // 
             // button1
@@ -107,14 +112,26 @@
             this.toolStripMenuItem1,
             this.openFileToolStripMenuItem});
             this.listboxcontext.Name = "listboxcontext";
-            this.listboxcontext.Size = new System.Drawing.Size(181, 76);
+            this.listboxcontext.Size = new System.Drawing.Size(177, 54);
             // 
             // toolStripDell
             // 
             this.toolStripDell.Name = "toolStripDell";
-            this.toolStripDell.Size = new System.Drawing.Size(180, 22);
+            this.toolStripDell.Size = new System.Drawing.Size(176, 22);
             this.toolStripDell.Text = "حذف مسیر انتخابی";
             this.toolStripDell.Click += new System.EventHandler(this.toolStripDell_Click);
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(173, 6);
+            // 
+            // openFileToolStripMenuItem
+            // 
+            this.openFileToolStripMenuItem.Name = "openFileToolStripMenuItem";
+            this.openFileToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
+            this.openFileToolStripMenuItem.Text = "بارگذاری فایل مسیرها";
+            this.openFileToolStripMenuItem.Click += new System.EventHandler(this.openFileToolStripMenuItem_Click);
             // 
             // label1
             // 
@@ -158,55 +175,76 @@
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.label4);
+            this.groupBox1.Controls.Add(this.numMaxThread);
+            this.groupBox1.Controls.Add(this.maxBufferSize);
+            this.groupBox1.Controls.Add(this.label3);
+            this.groupBox1.Controls.Add(this.ChkDeepCheck);
+            this.groupBox1.Location = new System.Drawing.Point(555, 190);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
+            this.groupBox1.Size = new System.Drawing.Size(233, 104);
+            this.groupBox1.TabIndex = 8;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "تنظیمات پیشرفته";
+            // 
+            // label4
+            // 
+            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(13, 25);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(134, 13);
+            this.label4.TabIndex = 17;
+            this.label4.Text = "اندازه بافر برای کپی فایلها";
+            // 
             // numMaxThread
             // 
-            this.numMaxThread.Location = new System.Drawing.Point(658, 215);
+            this.numMaxThread.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.numMaxThread.Location = new System.Drawing.Point(153, 49);
             this.numMaxThread.Name = "numMaxThread";
             this.numMaxThread.Size = new System.Drawing.Size(71, 20);
-            this.numMaxThread.TabIndex = 8;
+            this.numMaxThread.TabIndex = 13;
             this.numMaxThread.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.numMaxThread.ValueChanged += new System.EventHandler(this.numMaxThread_ValueChanged);
+            // 
+            // maxBufferSize
+            // 
+            this.maxBufferSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.maxBufferSize.Location = new System.Drawing.Point(153, 23);
+            this.maxBufferSize.Name = "maxBufferSize";
+            this.maxBufferSize.Size = new System.Drawing.Size(71, 20);
+            this.maxBufferSize.TabIndex = 16;
+            this.maxBufferSize.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
             // label3
             // 
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(562, 217);
+            this.label3.Location = new System.Drawing.Point(57, 51);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(90, 13);
-            this.label3.TabIndex = 9;
+            this.label3.TabIndex = 14;
             this.label3.Text = "تعداد کپی همزمان";
             // 
             // ChkDeepCheck
             // 
+            this.ChkDeepCheck.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.ChkDeepCheck.AutoSize = true;
-            this.ChkDeepCheck.Location = new System.Drawing.Point(419, 215);
+            this.ChkDeepCheck.Location = new System.Drawing.Point(113, 75);
             this.ChkDeepCheck.Name = "ChkDeepCheck";
             this.ChkDeepCheck.Size = new System.Drawing.Size(111, 17);
-            this.ChkDeepCheck.TabIndex = 10;
+            this.ChkDeepCheck.TabIndex = 15;
             this.ChkDeepCheck.Text = "برسی عمیق فایلها";
             this.ChkDeepCheck.UseVisualStyleBackColor = true;
-            this.ChkDeepCheck.CheckedChanged += new System.EventHandler(this.ChkDeepCheck_CheckedChanged);
-            // 
-            // toolStripMenuItem1
-            // 
-            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
-            // 
-            // openFileToolStripMenuItem
-            // 
-            this.openFileToolStripMenuItem.Name = "openFileToolStripMenuItem";
-            this.openFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.openFileToolStripMenuItem.Text = "بارگذاری فایل مسیرها";
-            this.openFileToolStripMenuItem.Click += new System.EventHandler(this.openFileToolStripMenuItem_Click);
             // 
             // frmSetting
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.ChkDeepCheck);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.numMaxThread);
+            this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.button4);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.label2);
@@ -224,7 +262,10 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Load += new System.EventHandler(this.frmSetting_Load);
             this.listboxcontext.ResumeLayout(false);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numMaxThread)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.maxBufferSize)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -243,10 +284,13 @@
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.ContextMenuStrip listboxcontext;
         private System.Windows.Forms.ToolStripMenuItem toolStripDell;
-        private System.Windows.Forms.NumericUpDown numMaxThread;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.CheckBox ChkDeepCheck;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem openFileToolStripMenuItem;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.NumericUpDown numMaxThread;
+        private System.Windows.Forms.NumericUpDown maxBufferSize;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.CheckBox ChkDeepCheck;
     }
 }
