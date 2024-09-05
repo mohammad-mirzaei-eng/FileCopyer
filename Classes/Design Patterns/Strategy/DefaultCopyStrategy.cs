@@ -179,6 +179,7 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                                             {
                                                 var progressBar = progressBarDict[file];
                                                 var label = labelDict[file];
+                                                ///TODO need to change file direction
                                                 await CopyFileWithStream(file, destFile, progressBar, label, cancellationToken);
 
                                                 FileCopyManager.Instance.UpdateFileCopyStatus(file, false);
