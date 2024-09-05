@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FileCopyer.Interface
+namespace FileCopyer.Interface.Design_Patterns.Observer
 {
-    public interface IFileOperation
+    public interface ICopyObserver
     {
-        void Execute();
+        void Notify(string message);
     }
 }

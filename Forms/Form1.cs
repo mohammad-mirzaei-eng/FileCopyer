@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using FileCopyer.Classes;
+using FileCopyer.Classes.Design_Patterns.Helper;
 using FileCopyer.Classes.Design_Patterns.Singleton;
 using FileCopyer.Classes.Design_Patterns.Strategy;
 using FileCopyer.Interface;

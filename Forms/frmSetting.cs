@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using FileCopyer.Classes;
+using FileCopyer.Classes.Design_Patterns.Helper;
 using FileCopyer.Models;
 
 namespace FileCopyer.Forms

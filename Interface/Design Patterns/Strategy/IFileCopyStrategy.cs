@@ -12,7 +12,7 @@ namespace FileCopyer.Interface.Design_Patterns.Strategy
 {
     public interface IFileCopyStrategy
     {       
-        void CopyFile(List<FileModel> fileModels, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken);
+        Task CopyFile(List<FileModel> fileModels, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken);
     }
 
 }

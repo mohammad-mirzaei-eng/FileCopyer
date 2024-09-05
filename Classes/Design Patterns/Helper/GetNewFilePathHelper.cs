@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FileCopyer.Classes
+namespace FileCopyer.Classes.Design_Patterns.Helper
 {
     public class GetNewFilePathHelper
     {

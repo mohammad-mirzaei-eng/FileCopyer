@@ -50,15 +50,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\CopyFileOperation.cs" />
     <Compile Include="Classes\Design Patterns\Strategy\DefaultCopyStrategy.cs" />
-    <Compile Include="Classes\DeleteFileOperation.cs" />
-    <Compile Include="Classes\GenerateReportHelper.cs" />
-    <Compile Include="Classes\GetNewFilePathHelper.cs" />
-    <Compile Include="Classes\HashFileHelper.cs" />
-    <Compile Include="Classes\MoveFileOperation.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\GenerateReportHelper.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\GetNewFilePathHelper.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\HashFileHelper.cs" />
     <Compile Include="Classes\Design Patterns\Observer\CopyProgressNotifier.cs" />
-    <Compile Include="Classes\SerializationHelper.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\SerializationHelper.cs" />
     <Compile Include="Forms\CustomFolderBrowserForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -66,6 +63,7 @@
       <DependentUpon>CustomFolderBrowserForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Classes\Design Patterns\Singleton\FileCopyManager.cs" />
+    <Compile Include="Interface\Design Patterns\Observer\ICopyObserver.cs" />
     <Compile Include="Interface\Design Patterns\Observer\IProgressObserver.cs" />
     <Compile Include="Models\FileModel.cs" />
     <Compile Include="Forms\Form1.cs">
@@ -84,7 +82,7 @@
     <Compile Include="Interface\IFileOperation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Classes\BinarySerializationHelper.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\BinarySerializationHelper.cs" />
     <Compile Include="Models\SettingsModel.cs" />
     <EmbeddedResource Include="Forms\CustomFolderBrowserForm.resx">
       <DependentUpon>CustomFolderBrowserForm.cs</DependentUpon>

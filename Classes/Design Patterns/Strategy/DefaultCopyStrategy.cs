@@ -1,4 +1,5 @@
-﻿using FileCopyer.Classes.Observer;
+﻿using FileCopyer.Classes.Design_Patterns.Singleton;
+using FileCopyer.Classes.Observer;
 using FileCopyer.Interface;
 using FileCopyer.Interface.Design_Patterns.Observer;
 using FileCopyer.Interface.Design_Patterns.Strategy;
@@ -7,7 +8,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -23,7 +23,12 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
 
         private CopyProgressNotifier progressNotifier;
         private ConcurrentDictionary<string, bool> copyingFiles = new ConcurrentDictionary<string, bool>();
-        private List<IProgressObserver> observers = new List<IProgressObserver>();
+        private List<ICopyObserver> observers = new List<ICopyObserver>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private List<string> _errorList = new List<string>(); // لیست خطاها
 
         int totalFiles = 0;
         SettingsModel settingsModel = null;
@@ -39,8 +44,12 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             progressNotifier = notifier;
         }
 
-        public async void CopyFile(List<FileModel> fileModels, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken)
+        public async Task CopyFile(List<FileModel> fileModels, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken)
         {
+            if (_errorList.Count > 0)
+            {
+                _errorList.Clear();
+            }
             if (cancellationToken.IsCancellationRequested)
             {
                 return;
@@ -161,6 +170,7 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
 
             await Task.WhenAll(tasks);
             progressNotifier.NotifyCopyCompleted();
+            FileCopyManager.Instance.AddErrors(_errorList);
         }
 
         private void InitializeComponent(FlowLayoutPanel flowLayoutPanel, string relativePath, out ProgressBar progressBar, out Label label)
@@ -240,10 +250,12 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             }
             catch (OperationCanceledException ex)
             {
+                _errorList.Add($"Copying {Path.GetFileName(sourceFile)} {ex.Message}");
                 Update_Lable(label, $"Copying {Path.GetFileName(sourceFile)} {ex.Message}");
             }
             catch (Exception ex)
             {
+                _errorList.Add($"Error copying {Path.GetFileName(sourceFile)}: {ex.Message}");
                 Update_Lable(label, $"Error copying {Path.GetFileName(sourceFile)}: {ex.Message}");
             }
         }

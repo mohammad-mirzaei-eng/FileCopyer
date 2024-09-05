@@ -7,7 +7,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FileCopyer.Classes
+namespace FileCopyer.Classes.Design_Patterns.Helper
 {
     internal static class SerializationHelper
     {

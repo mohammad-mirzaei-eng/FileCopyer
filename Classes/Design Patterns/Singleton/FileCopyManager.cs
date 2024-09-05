@@ -10,6 +10,7 @@ using FileCopyer.Classes.Design_Patterns.Strategy;
 using FileCopyer.Classes.Observer;
 using FileCopyer.Interface.Design_Patterns.Observer;
 using FileCopyer.Models;
+using FileCopyer.Classes.Design_Patterns.Helper;
 
 namespace FileCopyer.Classes.Design_Patterns.Singleton
 {
@@ -20,6 +21,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         private IFileCopyStrategy _copyStrategy;
         private CancellationTokenSource _cancellationTokenSource;
         private ConcurrentDictionary<string, bool> _copyingFiles = new ConcurrentDictionary<string, bool>();
+        private List<string> _errorList = new List<string>(); // لیست خطاها
 
         public static FileCopyManager Instance => _instance.Value;
 
@@ -58,11 +60,27 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
                 _copyStrategy = strategy;
 
             _cancellationTokenSource = new CancellationTokenSource();
-            Task.Run(() =>
+            Task.Run(async () =>
             {
-                _copyStrategy?.CopyFile(fileModels, flowLayoutPanel, _cancellationTokenSource.Token);
+               await _copyStrategy?.CopyFile(fileModels, flowLayoutPanel, _cancellationTokenSource.Token);
+                // بعد از پایان عملیات کپی، گزارش خطا تولید شود
+               await GenerateErrorReport();
             });
         }
+
+        // متد تولید گزارش خطا
+        private async Task GenerateErrorReport()
+        {
+            if (_errorList.Count > 0)
+            {
+                string reportBasePath = "Report_";
+                string date = DateTime.Now.ToString("yyyyMMdd");
+
+                string reportPath = $"{reportBasePath}{date}.txt"; // مسیر فایل گزارش
+                await new GenerateReportHelper().GenerateReport(reportPath, _errorList);
+            }
+        }
+
 
         // متد عمومی برای مدیریت وضعیت کپی
         public void UpdateFileCopyStatus(string filePath, bool isCopying)
@@ -126,6 +144,11 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         public void CancelCopy()
         {
             _cancellationTokenSource?.Cancel();
+        }        // اضافه کردن خطاها به لیست
+        
+        public void AddErrors(List<string> errors)
+        {
+            _errorList.AddRange(errors);
         }
     }
 }
