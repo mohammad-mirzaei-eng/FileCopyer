@@ -50,6 +50,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\Design Patterns\Helper\FindFileModelHelper.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\GetRelativePathHelper.cs" />
     <Compile Include="Classes\Design Patterns\Strategy\DefaultCopyStrategy.cs" />
     <Compile Include="Classes\Design Patterns\Helper\GenerateReportHelper.cs" />
     <Compile Include="Classes\Design Patterns\Helper\GetNewFilePathHelper.cs" />

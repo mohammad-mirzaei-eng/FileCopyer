@@ -20,7 +20,10 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         private static readonly Lazy<FileCopyManager> _instance = new Lazy<FileCopyManager>(() => new FileCopyManager());
         private IFileCopyStrategy _copyStrategy;
         private CancellationTokenSource _cancellationTokenSource;
+
         private ConcurrentDictionary<string, bool> _copyingFiles = new ConcurrentDictionary<string, bool>();
+        private ConcurrentDictionary<string, bool> _filesCopied = new ConcurrentDictionary<string, bool>();
+
         private List<string> _errorList = new List<string>(); // لیست خطاها
 
         public static FileCopyManager Instance => _instance.Value;
@@ -60,12 +63,37 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
             _copyStrategy = strategy;
 
             _cancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = _cancellationTokenSource.Token;
             Task.Run(async () =>
             {
-                await _copyStrategy?.CopyFile(fileModels, flowLayoutPanel, _cancellationTokenSource.Token);
-                // بعد از پایان عملیات کپی، گزارش خطا تولید شود
-                await GenerateErrorReport();
-            });
+            try
+            {
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        await _copyStrategy?.CopyFile(fileModels, flowLayoutPanel, _cancellationTokenSource.Token);
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            // عملیات کپی متوقف شده است.
+                            // شما می‌توانید وضعیت متوقف شده را مدیریت کنید
+                            break;
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // اگر عملیات متوقف شده است، اینجا می‌توانید وضعیت را مدیریت کنید
+                }
+                catch (Exception ex)
+                {
+                    // مدیریت خطاها
+                    MessageBox.Show($"خطا در عملیات کپی: {ex.Message}", "خطا", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    // تولید گزارش خطا بعد از پایان عملیات
+                    await GenerateErrorReport();
+                }
+            }, cancellationToken);
         }
 
         // متد تولید گزارش خطا
@@ -92,7 +120,19 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
             else
             {
                 _copyingFiles.TryRemove(filePath, out _);
+                _filesCopied.TryAdd(filePath, true); // فایل‌هایی که به پایان رسیدند
             }
+        }
+        // متد عمومی برای بررسی وضعیت کپی
+        public bool IsFileBeingCopied(string filePath)
+        {
+            return _copyingFiles.ContainsKey(filePath);
+        }
+
+        // متد عمومی برای بررسی اینکه آیا فایل کپی شده است
+        public bool IsFileCopied(string filePath)
+        {
+            return _filesCopied.ContainsKey(filePath);
         }
 
         public bool IsCopyInProgress(string filePath)
@@ -153,8 +193,11 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         // لغو عملیات کپی
         public void CancelCopy()
         {
-            _cancellationTokenSource?.Cancel();
-        }        // اضافه کردن خطاها به لیست
+            if (_cancellationTokenSource != null)
+            {
+                _cancellationTokenSource.Cancel();
+            }
+        }
         
         public void AddErrors(List<string> errors)
         {

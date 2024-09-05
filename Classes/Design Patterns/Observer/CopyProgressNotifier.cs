@@ -22,11 +22,11 @@ namespace FileCopyer.Classes.Observer
             observers.Remove(observer);
         }
 
-        public void NotifyFileCopied(int copiedFiles, int totalFiles)
+        public void NotifyFileCopied(int copiedFiles, int totalFiles, int errorFiles)
         {
             foreach (var observer in observers)
             {
-                observer.OnFileCopied(copiedFiles, totalFiles);
+                observer.OnFileCopied(copiedFiles, totalFiles,errorFiles);
             }
         }
 

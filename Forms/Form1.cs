@@ -1,36 +1,48 @@
-﻿using System;
+﻿using FileCopyer.Classes.Design_Patterns.Helper;
+using FileCopyer.Classes.Design_Patterns.Singleton;
+using FileCopyer.Interface.Design_Patterns.Observer;
+using FileCopyer.Models;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using FileCopyer.Classes;
-using FileCopyer.Classes.Design_Patterns.Helper;
-using FileCopyer.Classes.Design_Patterns.Singleton;
-using FileCopyer.Classes.Design_Patterns.Strategy;
-using FileCopyer.Interface;
-using FileCopyer.Interface.Design_Patterns.Observer;
-using FileCopyer.Interface.Design_Patterns.Strategy;
-using FileCopyer.Models;
 
 namespace FileCopyer.Forms
 {
     public partial class Form1 : Form, IProgressObserver
     {
-        private SettingsModel settingsModel= new SettingsModel();
+        private SettingsModel settingsModel = new SettingsModel();
         private List<FileModel> fileModels = new List<FileModel>(); // لیست مدل‌های فایل
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private bool runApp = false; // پرچم برای مدیریت اجرای برنامه
 
         public Form1()
         {
             InitializeComponent();
+            var manager = FileCopyManager.Instance;
+            manager.RegisterObserver(this);
         }
 
-        public void OnFileCopied(int copiedFiles, int totalFiles)
+        public void OnFileCopied(int copiedFiles, int totalFiles, int errorFiles)
         {
             Invoke(new Action(() =>
             {
+                if (runApp)
+                {
+                    toolStripstatus.BackColor = lblstatus.BackColor = Color.SpringGreen;
+                }
+                else
+                {
+                    toolStripstatus.BackColor = lblstatus.BackColor = SystemColors.Control;
+                }
+                this.Text = errorFiles > 0 ? $"{errorFiles} خطا در کپی کردن" : $"";
+                toolStripstatus.Text = lblstatus.Text = ($"در حال اجرا: {runApp}");
+                lblcopeid.Text = copiedFiles.ToString();
+
                 lbltotalcopied.Text = $"Copied {copiedFiles}/{totalFiles} files.";
                 totalbar.Maximum = totalFiles;
                 totalbar.Value = copiedFiles;
@@ -48,14 +60,39 @@ namespace FileCopyer.Forms
 
         private void CopyFilesButton_Click(object sender, EventArgs e)
         {
-            var manager = FileCopyManager.Instance;
-            manager.RegisterObserver(this);
-            
-                FileCopyManager.Instance.StartCopy(
-                fileModels,
-                flowLayoutPanel1,
-                totalbar,settingsModel
-            );
+            try
+            {
+                if (fileModels.Count > 0)
+                {
+                    if (!runApp)
+                    {
+                        (sender as Button).Text = "متوقف کردن";
+                        runApp = true;
+                        lblstatus.Text = "درحال آماده سازی مقدمات کپی کردن فایلها";
+                        lblstatus.BackColor = Color.LightGoldenrodYellow;
+
+                        FileCopyManager.Instance.StartCopy(
+                            fileModels,
+                            flowLayoutPanel1,
+                            totalbar,
+                            settingsModel);
+                    }
+                    else
+                    {
+                        (sender as Button).Text = "اجرا";
+                        runApp = false;
+                        FileCopyManager.Instance.CancelCopy();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("مسیر کپی فایل مشخص نشده است", "خطا", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "خطا", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)

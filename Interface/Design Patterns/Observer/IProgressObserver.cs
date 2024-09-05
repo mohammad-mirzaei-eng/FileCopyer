@@ -8,7 +8,7 @@ namespace FileCopyer.Interface.Design_Patterns.Observer
 {
     public interface IProgressObserver
     {
-        void OnFileCopied(int copiedFiles, int totalFiles);
+        void OnFileCopied(int copiedFiles, int totalFiles,int errorFiles);
         void OnCopyCompleted();
     }
 }
