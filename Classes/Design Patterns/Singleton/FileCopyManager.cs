@@ -11,13 +11,13 @@ using FileCopyer.Classes.Observer;
 using FileCopyer.Interface.Design_Patterns.Observer;
 using FileCopyer.Models;
 using FileCopyer.Classes.Design_Patterns.Helper;
+using System.IO;
 
 namespace FileCopyer.Classes.Design_Patterns.Singleton
 {
     public class FileCopyManager
     {
         private static readonly Lazy<FileCopyManager> _instance = new Lazy<FileCopyManager>(() => new FileCopyManager());
-        private readonly List<IFileOperation> _operations = new List<IFileOperation>();
         private IFileCopyStrategy _copyStrategy;
         private CancellationTokenSource _cancellationTokenSource;
         private ConcurrentDictionary<string, bool> _copyingFiles = new ConcurrentDictionary<string, bool>();
@@ -25,8 +25,8 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
 
         public static FileCopyManager Instance => _instance.Value;
 
-        private ConcurrentDictionary<List<FileModel>, IFileCopyStrategy> activeCopyStrategies = new ConcurrentDictionary<List<FileModel>, IFileCopyStrategy>();
-       
+        //private ConcurrentDictionary<List<FileModel>, IFileCopyStrategy> activeCopyStrategies = new ConcurrentDictionary<List<FileModel>, IFileCopyStrategy>();
+
         private CopyProgressNotifier notifier = new CopyProgressNotifier();
 
         private FileCopyManager() { }
@@ -54,17 +54,17 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
             {
                 settings = new SettingsModel();
             }
-            
+
             var strategy = new DefaultCopyStrategy(settings, notifier);
-                activeCopyStrategies.TryAdd(fileModels, strategy);
-                _copyStrategy = strategy;
+            //activeCopyStrategies.TryAdd(fileModels, strategy);
+            _copyStrategy = strategy;
 
             _cancellationTokenSource = new CancellationTokenSource();
             Task.Run(async () =>
             {
-               await _copyStrategy?.CopyFile(fileModels, flowLayoutPanel, _cancellationTokenSource.Token);
+                await _copyStrategy?.CopyFile(fileModels, flowLayoutPanel, _cancellationTokenSource.Token);
                 // بعد از پایان عملیات کپی، گزارش خطا تولید شود
-               await GenerateErrorReport();
+                await GenerateErrorReport();
             });
         }
 
@@ -105,12 +105,22 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
             return _copyingFiles.Count > 0;
         }
 
-        public async Task WaitForCopyCompletion()
+        private async Task WaitForCopyCompletion()
         {
             while (IsCopyingInProgress())
             {
                 await Task.Delay(500);
             }
+            await Task.Run(async () =>
+            {
+                // بعد از پایان عملیات کپی، گزارش خطا تولید شود
+                await GenerateErrorReport();
+            });
+        }
+
+        public void ClearCopyingFiles()
+        {
+            _copyingFiles.Clear();
         }
 
         // مدیریت رویداد بستن فرم
@@ -118,16 +128,16 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         {
             if (IsCopyingInProgress())
             {
-                DialogResult result = MessageBox.Show("مطمئن هستید میخواهید خروج کنید؟", "اعلان", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                DialogResult result = MessageBox.Show("برنامه درحال کپی است می خواهید بعد از اتمام کپی برنامه بسته شود؟", "اعلان", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
                 if (result == DialogResult.Yes)
                 {
                     e.Cancel = true;
-                    Task.Run(() =>
+                    Task.Run(async () =>
                     {
                         while (IsCopyingInProgress())
                         {
-                            Thread.Sleep(500);
+                           await WaitForCopyCompletion();
                         }
 
                         Application.Exit();

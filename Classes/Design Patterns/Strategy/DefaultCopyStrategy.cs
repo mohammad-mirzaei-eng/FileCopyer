@@ -22,8 +22,6 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
         ParallelOptions parallelOptions;
 
         private CopyProgressNotifier progressNotifier;
-        private ConcurrentDictionary<string, bool> copyingFiles = new ConcurrentDictionary<string, bool>();
-        private List<ICopyObserver> observers = new List<ICopyObserver>();
 
         /// <summary>
         /// 
@@ -46,10 +44,6 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
 
         public async Task CopyFile(List<FileModel> fileModels, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken)
         {
-            if (_errorList.Count > 0)
-            {
-                _errorList.Clear();
-            }
             if (cancellationToken.IsCancellationRequested)
             {
                 return;
@@ -89,7 +83,7 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                     {
                         if (dirPath.StartsWith(fileModel.Source))
                         {
-                            string relativePath = dirPath.Substring(fileModel.Source.Length + 1);
+                            string relativePath =dirPath!=fileModel.Source? dirPath.Substring(fileModel.Source.Length + 1):dirPath;
                             string newDirPath = Path.Combine(fileModel.Destination, relativePath);
 
                             if (!Directory.Exists(newDirPath))
@@ -104,6 +98,11 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             List<Control> controls = new List<Control>();
             var progressBarDict = new Dictionary<string, ProgressBar>();
             var labelDict = new Dictionary<string, Label>();
+            flowLayoutPanel.Invoke((MethodInvoker)(() =>
+            {
+                flowLayoutPanel.SuspendLayout();
+            }));
+            const int batchSize = 500; // تعداد کنترل‌ها در هر دسته
 
             foreach (var file in filesToCopy)
             {
@@ -122,14 +121,24 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                     controls.Add(label);
                     controls.Add(progressBar);
                 }
+                if (controls.Count >= batchSize)
+                {
+                    flowLayoutPanel.Invoke((MethodInvoker)(() =>
+                    {
+                        flowLayoutPanel.Controls.AddRange(controls.ToArray());
+                        controls.Clear();
+                    }));
+                }
             }
-
+            if (controls.Any())
+            {
+                flowLayoutPanel.Invoke((MethodInvoker)(() => flowLayoutPanel.Controls.AddRange(controls.ToArray())));
+            }
             // افزودن کنترل‌ها به FlowLayoutPanel به صورت دسته‌ای
             flowLayoutPanel.Invoke((MethodInvoker)(() =>
             {
-                flowLayoutPanel.Controls.AddRange(controls.ToArray());
+            flowLayoutPanel.ResumeLayout();
             }));
-
             // کپی فایل‌ها
             List<Task> tasks = new List<Task>();
             foreach (var file in filesToCopy)
@@ -147,21 +156,24 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                             await semaphore.WaitAsync();
                             try
                             {
-                                if (!copyingFiles.TryAdd(file, true))
+                                if (!FileCopyManager.Instance.IsCopyInProgress(file))
                                 {
-                                    return;
+                                    FileCopyManager.Instance.UpdateFileCopyStatus(file, true);
+
+                                    var progressBar = progressBarDict[file];
+                                    var label = labelDict[file];
+
+                                    await CopyFileWithStream(file, destFile, progressBar, label, cancellationToken);
                                 }
-
-                                var progressBar = progressBarDict[file];
-                                var label = labelDict[file];
-
-                                await CopyFileWithStream(file, destFile, progressBar, label, cancellationToken);
-
+                                else
+                                {
+                                    _errorList.Add($"فایل {file} در صف کپی هست");
+                                }
                             }
                             finally
                             {
                                 semaphore.Release();
-                                copyingFiles.TryRemove(file, out _);
+                                FileCopyManager.Instance.UpdateFileCopyStatus(file, false);
                             }
                         }, cancellationToken));
                     }
@@ -169,8 +181,8 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             }
 
             await Task.WhenAll(tasks);
-            progressNotifier.NotifyCopyCompleted();
             FileCopyManager.Instance.AddErrors(_errorList);
+            progressNotifier.NotifyCopyCompleted();
         }
 
         private void InitializeComponent(FlowLayoutPanel flowLayoutPanel, string relativePath, out ProgressBar progressBar, out Label label)
