@@ -28,8 +28,6 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
 
         public static FileCopyManager Instance => _instance.Value;
 
-        //private ConcurrentDictionary<List<FileModel>, IFileCopyStrategy> activeCopyStrategies = new ConcurrentDictionary<List<FileModel>, IFileCopyStrategy>();
-
         private CopyProgressNotifier notifier = new CopyProgressNotifier();
 
         private FileCopyManager() { }
@@ -59,7 +57,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
             }
 
             var strategy = new DefaultCopyStrategy(settings, notifier);
-            //activeCopyStrategies.TryAdd(fileModels, strategy);
+
             _copyStrategy = strategy;
 
             _cancellationTokenSource = new CancellationTokenSource();
@@ -71,10 +69,10 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
                     while (!cancellationToken.IsCancellationRequested)
                     {
                         await _copyStrategy?.CopyFile(fileModels, flowLayoutPanel, _cancellationTokenSource.Token);
+                        await GenerateErrorReport();
                         if (cancellationToken.IsCancellationRequested)
                         {
                             // عملیات کپی متوقف شده است.
-                            // شما می‌توانید وضعیت متوقف شده را مدیریت کنید
                             break;
                         }
                     }
@@ -106,6 +104,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
 
                 string reportPath = $"{reportBasePath}{date}.txt"; // مسیر فایل گزارش
                 await new GenerateReportHelper().GenerateReport(reportPath, _errorList);
+                _errorList.Clear();
             }
         }
 
@@ -158,9 +157,20 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
             });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void ClearCopyingFiles()
         {
             _copyingFiles.Clear();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void ClearCopyedFiles()
+        {
+            _filesCopied.Clear();
         }
 
         // مدیریت رویداد بستن فرم
@@ -202,6 +212,16 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         public void AddErrors(List<string> errors)
         {
             _errorList.AddRange(errors);
+        }
+
+        public void AddError(string errors)
+        {
+            _errorList.Add(errors);
+        }
+
+        public int GetError()
+        {
+            return _errorList.Count;
         }
     }
 }

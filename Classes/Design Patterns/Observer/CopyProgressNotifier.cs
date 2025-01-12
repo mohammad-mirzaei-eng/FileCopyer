@@ -1,4 +1,5 @@
-﻿using FileCopyer.Interface;
+﻿using FileCopyer.Classes.Design_Patterns.Singleton;
+using FileCopyer.Interface;
 using FileCopyer.Interface.Design_Patterns.Observer;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,9 @@ namespace FileCopyer.Classes.Observer
             {
                 observer.OnCopyCompleted();
             }
+
+            FileCopyManager.Instance.ClearCopyedFiles();
+            FileCopyManager.Instance.ClearCopyingFiles();
         }
     }
 }

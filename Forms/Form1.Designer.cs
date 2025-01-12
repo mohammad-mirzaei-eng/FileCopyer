@@ -1,6 +1,6 @@
 ﻿namespace FileCopyer.Forms
 {
-    partial class Form1
+    partial class main
     {
         /// <summary>
         /// Required designer variable.
@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(main));
             this.btnstart = new System.Windows.Forms.Button();
             this.listBox1 = new System.Windows.Forms.ListBox();
             this.listboxcontext = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -79,12 +79,12 @@
             this.listboxcontext.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripDell});
             this.listboxcontext.Name = "listboxcontext";
-            this.listboxcontext.Size = new System.Drawing.Size(181, 48);
+            this.listboxcontext.Size = new System.Drawing.Size(167, 26);
             // 
             // toolStripDell
             // 
             this.toolStripDell.Name = "toolStripDell";
-            this.toolStripDell.Size = new System.Drawing.Size(180, 22);
+            this.toolStripDell.Size = new System.Drawing.Size(166, 22);
             this.toolStripDell.Text = "حذف مسیر انتخابی";
             this.toolStripDell.Click += new System.EventHandler(this.toolStripDell_Click);
             // 
@@ -127,30 +127,30 @@
             // toolStripstatus
             // 
             this.toolStripstatus.Name = "toolStripstatus";
-            this.toolStripstatus.Size = new System.Drawing.Size(180, 22);
+            this.toolStripstatus.Size = new System.Drawing.Size(149, 22);
             this.toolStripstatus.Text = "وضعیت : False";
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(177, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(146, 6);
             // 
             // showappcms
             // 
             this.showappcms.Name = "showappcms";
-            this.showappcms.Size = new System.Drawing.Size(180, 22);
+            this.showappcms.Size = new System.Drawing.Size(149, 22);
             this.showappcms.Text = "نمایش برنامه";
             this.showappcms.Click += new System.EventHandler(this.showappcms_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(146, 6);
             // 
             // exitappcms
             // 
             this.exitappcms.Name = "exitappcms";
-            this.exitappcms.Size = new System.Drawing.Size(180, 22);
+            this.exitappcms.Size = new System.Drawing.Size(149, 22);
             this.exitappcms.Text = "خروج";
             this.exitappcms.Click += new System.EventHandler(this.exitappcms_Click);
             // 
@@ -217,7 +217,7 @@
             this.flowLayoutPanel1.Size = new System.Drawing.Size(470, 284);
             this.flowLayoutPanel1.TabIndex = 13;
             // 
-            // Form1
+            // main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -237,7 +237,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.Name = "Form1";
+            this.Name = "main";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);

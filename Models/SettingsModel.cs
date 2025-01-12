@@ -15,6 +15,7 @@ namespace FileCopyer.Models
             CheckFileDeep = false;
             MaxThreads = 5;
             CreateParentPath = true;
+            ShowProgressBar = true;
         }
         /// <summary>
         /// 
@@ -34,5 +35,7 @@ namespace FileCopyer.Models
         /// 
         /// </summary>
         public bool CreateParentPath { get;  set; }
+
+        public bool ShowProgressBar { get; set; }
     }
 }

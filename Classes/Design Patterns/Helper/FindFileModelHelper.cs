@@ -10,10 +10,10 @@ namespace FileCopyer.Classes.Design_Patterns.Helper
 {
     public class FindFileModelHelper
     {
-        public static FileModel FindFileModel(List<FileModel> fileModels, string file)
+        public static FileModel FindFileModel(List<FileModel> fileModels, string file,SettingsModel settingsModel)
         {
             // تبدیل مسیر مبدا و فایل به مسیر نسبی
-            var relativePath =GetRelativePathHelper.GetRelativePath(fileModels.First().Source, file);
+            var relativePath =GetRelativePathHelper.GetRelativePath(fileModels.First().Source, file, settingsModel.CreateParentPath);
 
             return fileModels.FirstOrDefault(f =>
                 Path.Combine(f.Source, relativePath).Equals(file, StringComparison.OrdinalIgnoreCase)

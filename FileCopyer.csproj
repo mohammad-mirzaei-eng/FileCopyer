@@ -84,6 +84,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Classes\Design Patterns\Helper\BinarySerializationHelper.cs" />
     <Compile Include="Models\SettingsModel.cs" />
+    <Compile Include="UserControls\CopyStatusBar.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\CopyStatusBar.Designer.cs">
+      <DependentUpon>CopyStatusBar.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="Forms\CustomFolderBrowserForm.resx">
       <DependentUpon>CustomFolderBrowserForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -103,6 +109,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="UserControls\CopyStatusBar.resx">
+      <DependentUpon>CopyStatusBar.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

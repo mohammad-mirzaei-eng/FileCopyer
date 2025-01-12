@@ -52,6 +52,7 @@ namespace FileCopyer.Forms
                 ChkDeepCheck.Checked = settings.CheckFileDeep;
                 maxBufferSize.Value = settings.MaxBufferSize;
                 chkCreateParent.Checked = settings.CreateParentPath;
+                chkShowProgressBar.Checked = settings.ShowProgressBar;
             }
         }
 
@@ -191,6 +192,11 @@ namespace FileCopyer.Forms
         private void chkCreateParent_CheckedChanged(object sender, EventArgs e)
         {
             settings.CreateParentPath = chkCreateParent.Checked;
+        }
+
+        private void chkShowProgressBar_CheckedChanged(object sender, EventArgs e)
+        {
+            settings.ShowProgressBar = chkCreateParent.Checked;
         }
     }
 }

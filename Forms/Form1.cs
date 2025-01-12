@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace FileCopyer.Forms
 {
-    public partial class Form1 : Form, IProgressObserver
+    public partial class main : Form, IProgressObserver
     {
         private SettingsModel settingsModel = new SettingsModel();
         private List<FileModel> fileModels = new List<FileModel>(); // لیست مدل‌های فایل
@@ -20,7 +20,7 @@ namespace FileCopyer.Forms
         /// </summary>
         private bool runApp = false; // پرچم برای مدیریت اجرای برنامه
 
-        public Form1()
+        public main()
         {
             InitializeComponent();
             var manager = FileCopyManager.Instance;
