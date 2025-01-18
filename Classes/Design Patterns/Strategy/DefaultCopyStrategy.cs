@@ -23,10 +23,9 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
 
         private CopyProgressNotifier progressNotifier;
 
-        int totalFiles = 0;
         SettingsModel settingsModel = null;
         int copiedFiles = 0;
-        
+
 
 
         public DefaultCopyStrategy(SettingsModel settings, CopyProgressNotifier notifier)
@@ -44,7 +43,6 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
         {
             try
             {
-
                 if (cancellationToken.IsCancellationRequested)
                 {
                     return;
@@ -158,15 +156,13 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                 }
 
                 // پیدا کردن فایل‌هایی که فقط در مبدا وجود دارند
-                var missingFilesInDestination = fileToRelativePathMap
+                var missingFilesInDestination = fileToRelativePathMap.AsParallel()
                     .Where(kvp => !destinationFilePathsSet.Contains(kvp.Key)) // بررسی عدم وجود در مقصد
                     .Select(kvp => new
                     {
                         SourcePath = kvp.Value, // مسیر کامل فایل در مبدا
                         RelativePath = kvp.Key  // مسیر نسبی فایل
                     });
-
-                totalFiles = missingFilesInDestination.Count();
 
 
 
@@ -215,17 +211,18 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                     }));
                 }
 
-
+                var countdown = new CountdownEvent(missingFilesInDestination.Count(file =>
+    !FileCopyManager.Instance.IsFileCopied(file.SourcePath)));
                 // به‌روزرسانی کد برای محاسبه درست مسیرهای نسبی
-                var tasks = missingFilesInDestination
+                var tasks = missingFilesInDestination.AsParallel()
                     .Where(file => !FileCopyManager.Instance.IsFileCopied(file.SourcePath)) // فقط فایل‌هایی که کپی نشده‌اند
                     .Select(file =>
                     {
                         var originalFilePath = filesToCopy.FirstOrDefault(f => Path.GetFullPath(f) == Path.GetFullPath(file.SourcePath));
-                        if (originalFilePath == null) return Task.CompletedTask; // اگر فایل مبدا پیدا نشد، از کپی صرف نظر کن
+                        if (originalFilePath == null) return null; // اگر فایل مبدا پیدا نشد، از کپی صرف نظر کن
 
                         var fileModel = fileModels.FirstOrDefault(fm => originalFilePath.StartsWith(fm.Source));
-                        if (fileModel == null) return Task.CompletedTask; // اگر مدل فایل پیدا نشد، از کپی صرف نظر کن
+                        if (fileModel == null) return null; // اگر مدل فایل پیدا نشد، از کپی صرف نظر کن
 
                         // محاسبه مسیر نسبی بدون پوشه والد
                         string relativePath = GetRelativePathHelper.GetRelativePath(fileModel.Source, originalFilePath, settingsModel.CreateParentPath);
@@ -244,7 +241,7 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                         if (File.Exists(destFile))
                         {
                             FileCopyManager.Instance.AddError($"فایل {file.SourcePath} در مقصد وجود دارد");
-                            return Task.CompletedTask; // اگر فایل در مقصد وجود دارد، از کپی صرف نظر کن
+                            return null; // اگر فایل در مقصد وجود دارد، از کپی صرف نظر کن
                         }
 
                         // ایجاد Task برای کپی فایل
@@ -258,12 +255,12 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                                     FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, true); // به‌روزرسانی وضعیت کپی شدن فایل
                                     if (settingsModel.ShowProgressBar && copyStatusBar.ContainsKey(file.RelativePath))
                                     {
-                                        await CopyFileWithStream(originalFilePath, destFile, copyStatusBar[file.RelativePath], cancellationToken).ConfigureAwait(false); // کپی فایل
+                                        await CopyFileWithStream(originalFilePath, destFile, missingFilesInDestination.AsParallel().Count(), copyStatusBar[file.RelativePath], cancellationToken).ConfigureAwait(false); // کپی فایل
                                         FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
                                     }
-                                    else if (settingsModel.ShowProgressBar==false)
+                                    else if (settingsModel.ShowProgressBar == false)
                                     {
-                                        await CopyFileWithStream(originalFilePath, destFile, cancellationToken).ConfigureAwait(false); // کپی فایل
+                                        await CopyFileWithStream(originalFilePath, destFile, missingFilesInDestination.AsParallel().Count(), cancellationToken).ConfigureAwait(false); // کپی فایل
                                         FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
                                     }
                                 }
@@ -275,15 +272,22 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                             catch (Exception ex)
                             {
                                 FileCopyManager.Instance.AddError($"خطا در کپی فایل {file.SourcePath}: {ex.Message}");
-                                FileCopyManager.Instance.UpdateFileCopyStatus(destFile,false);
+                                FileCopyManager.Instance.UpdateFileCopyStatus(destFile, false);
                             }
                             finally
                             {
                                 semaphore.Release();
+                                countdown.Signal();
                             }
                         }, cancellationToken);
-                    }).ToList();
-                await Task.WhenAll(tasks);
+
+                    }).Where(task => task != null)
+                    .ToList(); // حذف تسک‌های خالی
+                if (tasks.Any())
+                {
+                   // await Task.WhenAll(tasks);
+                }
+                countdown.Wait();
                 progressNotifier.NotifyCopyCompleted();
             }
             catch (Exception ex)
@@ -299,13 +303,13 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                 ProgressBarName = relativePath + "_ProgressBar",
                 ProgressBarMinValue = 0,
                 ProgressBarValue = 0,
-                Tag =relativePath,
+                Tag = relativePath,
                 LableText = $"Preparing to copy {Path.GetFileName(relativePath)}...",
-                Width = flowLayoutPanel.Width - 20
+                Width = flowLayoutPanel.ClientRectangle.Width - 20
             };
         }
 
-        private async Task CopyFileWithStream(string sourceFile, string destFile, CopyStatusBar copyStatusBar, CancellationToken cancellationToken)
+        private async Task CopyFileWithStream(string sourceFile, string destFile, int totalFiles, CopyStatusBar copyStatusBar, CancellationToken cancellationToken)
         {
             try
             {
@@ -369,8 +373,8 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                 }));
             }
         }
-        
-        private async Task CopyFileWithStream(string sourceFile, string destFile, CancellationToken cancellationToken)
+
+        private async Task CopyFileWithStream(string sourceFile, string destFile, int totalFiles, CancellationToken cancellationToken)
         {
             try
             {

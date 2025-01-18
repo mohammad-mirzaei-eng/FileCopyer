@@ -64,8 +64,8 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
             var cancellationToken = _cancellationTokenSource.Token;
             Task.Run(async () =>
             {
-            try
-            {
+                try
+                {
                     while (!cancellationToken.IsCancellationRequested)
                     {
                         await _copyStrategy?.CopyFile(fileModels, flowLayoutPanel, _cancellationTokenSource.Token);
