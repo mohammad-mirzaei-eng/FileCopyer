@@ -305,7 +305,8 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                 ProgressBarValue = 0,
                 Tag = relativePath,
                 LableText = $"Preparing to copy {Path.GetFileName(relativePath)}...",
-                Width = flowLayoutPanel.ClientRectangle.Width - 20
+                Width = flowLayoutPanel.ClientRectangle.Width - 25,
+                Top = flowLayoutPanel.Controls.Count * 50
             };
         }
 
