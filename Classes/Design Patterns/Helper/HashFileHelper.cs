@@ -23,5 +23,20 @@ namespace FileCopyer.Classes.Design_Patterns.Helper
                 return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant(); // تبدیل هش به رشته
             }
         }
+
+        /// <summary>
+        /// Convert long to Hash
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns>MD5 Hash type string</returns>
+        public string GetFileHash(long value)
+        {
+            byte[] bytes = BitConverter.GetBytes(value);
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] hash = sha256.ComputeHash(bytes);
+                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant(); // تبدیل هش به رشته
+            }
+        }
     }
 }

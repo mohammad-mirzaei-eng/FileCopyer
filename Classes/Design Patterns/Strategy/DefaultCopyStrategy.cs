@@ -275,42 +275,28 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                                     if (settingsModel.ShowProgressBar && copyStatusBar.ContainsKey(file.RelativePath))
                                     {
                                         await CopyFileWithStream(originalFilePath, destFile, missingFilesInDestination.AsParallel().Count(), copyStatusBar[file.RelativePath], cancellationToken).ConfigureAwait(false); // کپی فایل
-                                        if (settingsModel.CheckFileDeep)
+                                        bool check_deep_result = VerifyFileCopy(originalFilePath, destFile, !settingsModel.CheckFileDeep);
+                                        if (check_deep_result)
                                         {
-                                            bool check_deep_result = VerifyFileCopy(originalFilePath, destFile);
-                                            if (check_deep_result)
-                                            {
-                                                FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
-                                            }
-                                            else
-                                            {
-                                                FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
-                                            }
+                                            FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
                                         }
                                         else
                                         {
-                                            FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
+                                            FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
                                         }
                                     }
                                     else if (settingsModel.ShowProgressBar == false)
                                     {
                                         await CopyFileWithStream(originalFilePath, destFile, missingFilesInDestination.AsParallel().Count(), cancellationToken).ConfigureAwait(false); // کپی فایل
+                                        bool check_deep_result = VerifyFileCopy(originalFilePath, destFile, !settingsModel.CheckFileDeep);
 
-                                        if (settingsModel.CheckFileDeep)
+                                        if (check_deep_result)
                                         {
-                                            bool check_deep_result = VerifyFileCopy(originalFilePath, destFile);
-                                            if (check_deep_result)
-                                            {
-                                                FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
-                                            }
-                                            else
-                                            {
-                                                FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
-                                            }
+                                            FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
                                         }
                                         else
                                         {
-                                            FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
+                                            FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
                                         }
                                     }
                                     else
@@ -386,12 +372,13 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
         /// <returns></returns>
         private async Task CopyFileWithStream(string sourceFile, string destFile, int totalFiles, CopyStatusBar copyStatusBar, CancellationToken cancellationToken)
         {
+            string tempDestFile = destFile + ".temp";
             try
             {
                 int bufferSize = settingsModel.MaxBufferSize * (1024 * 1024); // MB buffer size
 
                 using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, true))
-                using (FileStream destStream = new FileStream(destFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
+                using (FileStream destStream = new FileStream(tempDestFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
                 {
                     byte[] buffer = new byte[bufferSize];
                     int bytesRead;
@@ -421,6 +408,16 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                         copyStatusBar.LableText = $"Copying {Path.GetFileName(sourceFile)} completed. {copiedFiles}/{totalFiles} files.";
                     }));
                 }
+                bool check_deep_result = VerifyFileCopy(sourceFile, tempDestFile, true);
+                if (check_deep_result)
+                {
+                    RenameFile(tempDestFile, destFile);
+                    FileCopyManager.Instance.UpdateFileCopyStatus(sourceFile, false); // به‌روزرسانی وضعیت کپی شده
+                }
+                else
+                {
+                    FileCopyManager.Instance.AddError($"File copy failed for {sourceFile}");
+                }
             }
             catch (IOException ioEx)
             {
@@ -448,6 +445,14 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             }
         }
 
+        private void RenameFile(string tempFilePath, string destFilePath)
+        {
+            if (File.Exists(destFilePath))
+            {
+                File.Delete(destFilePath);
+            }
+            File.Move(tempFilePath, destFilePath);
+        }
         // متد کپی فایل با استفاده از Stream بدون نمایش ProgressBar
         /// <summary>
         /// Copies a file using streams without updating the progress bar
@@ -503,17 +508,27 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
         /// </summary>
         /// <param name="sourceFile">address source file type string</param>
         /// <param name="destFile">address destination file type string</param>
+        /// <param name="size">if true hash file size , if false read all byte file in stream and return hash</param>
         /// <returns>Boolean</returns>
-        private bool VerifyFileCopy(string sourceFile, string destFile)
+        private bool VerifyFileCopy(string sourceFile, string destFile, bool size)
         {
-            using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read))
-            using (FileStream destStream = new FileStream(destFile, FileMode.Open, FileAccess.Read))
+            if (size)
             {
-                HashFileHelper hashFileHelper = new HashFileHelper();
-                string sourceHash = hashFileHelper.GetFileHash(sourceStream);
-                string destHash = hashFileHelper.GetFileHash(destStream);
+                long source_size = (new FileInfo(sourceFile).Length);
+                long destFile_size = (new FileInfo(destFile).Length);
+                return source_size == destFile_size; // بررسی یکسان بودن اندازه فایل‌های مبدا و مقصد
+            }
+            else
+            {
+                using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read))
+                using (FileStream destStream = new FileStream(destFile, FileMode.Open, FileAccess.Read))
+                {
+                    HashFileHelper hashFileHelper = new HashFileHelper();
+                    string sourceHash = hashFileHelper.GetFileHash(sourceStream);
+                    string destHash = hashFileHelper.GetFileHash(destStream);
 
-                return sourceHash == destHash; // بررسی یکسان بودن هش فایل‌های مبدا و مقصد
+                    return sourceHash == destHash; // بررسی یکسان بودن هش فایل‌های مبدا و مقصد
+                }
             }
         }
     }
