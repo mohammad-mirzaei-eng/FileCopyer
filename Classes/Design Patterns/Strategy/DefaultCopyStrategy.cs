@@ -26,8 +26,6 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
         SettingsModel settingsModel = null;
         int copiedFiles = 0;
 
-
-
         public DefaultCopyStrategy(SettingsModel settings, CopyProgressNotifier notifier)
         {
             this.settingsModel = settings;
@@ -256,12 +254,46 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                                     if (settingsModel.ShowProgressBar && copyStatusBar.ContainsKey(file.RelativePath))
                                     {
                                         await CopyFileWithStream(originalFilePath, destFile, missingFilesInDestination.AsParallel().Count(), copyStatusBar[file.RelativePath], cancellationToken).ConfigureAwait(false); // کپی فایل
-                                        FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
+                                        if (settingsModel.CheckFileDeep)
+                                        {
+                                            bool check_deep_result = VerifyFileCopy(originalFilePath, destFile);
+                                            if (check_deep_result)
+                                            {
+                                                FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
+                                            }
+                                            else
+                                            {
+                                                FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
+                                        }
                                     }
                                     else if (settingsModel.ShowProgressBar == false)
                                     {
                                         await CopyFileWithStream(originalFilePath, destFile, missingFilesInDestination.AsParallel().Count(), cancellationToken).ConfigureAwait(false); // کپی فایل
-                                        FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
+
+                                        if (settingsModel.CheckFileDeep)
+                                        {
+                                            bool check_deep_result = VerifyFileCopy(originalFilePath, destFile);
+                                            if (check_deep_result)
+                                            {
+                                                FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
+                                            }
+                                            else
+                                            {
+                                                FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
+                                        }
+                                    }
+                                    else {
+                                        FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
                                     }
                                 }
                                 else
@@ -413,6 +445,20 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             catch (Exception ex)
             {
                 FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {ex.Message}");
+            }
+        }
+
+        // متد بررسی کپی موفق فایل
+        private bool VerifyFileCopy(string sourceFile, string destFile)
+        {
+            using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read))
+            using (FileStream destStream = new FileStream(destFile, FileMode.Open, FileAccess.Read))
+            {
+                HashFileHelper hashFileHelper = new HashFileHelper();
+                string sourceHash = hashFileHelper.GetFileHash(sourceStream);
+                string destHash = hashFileHelper.GetFileHash(destStream);
+
+                return sourceHash == destHash; // بررسی یکسان بودن هش فایل‌های مبدا و مقصد
             }
         }
     }
