@@ -18,7 +18,8 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
 {
     public class DefaultCopyStrategy : IFileCopyStrategy
     {
-        private SemaphoreSlim semaphore; // محدود کردن تعداد تردها
+        // محدود کردن تعداد تردها
+        private SemaphoreSlim semaphore;
         ParallelOptions parallelOptions;
 
         private CopyProgressNotifier progressNotifier;
@@ -26,31 +27,50 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
         SettingsModel settingsModel = null;
         int copiedFiles = 0;
 
+        // سازنده کلاس که تنظیمات و نوتیفایر را دریافت می‌کند
+        /// <summary>
+        /// Constructor for DefaultCopyStrategy class
+        /// </summary>
+        /// <param name="settings">SettingsModel object containing settings</param>
+        /// <param name="notifier">CopyProgressNotifier object for notifying progress</param>
         public DefaultCopyStrategy(SettingsModel settings, CopyProgressNotifier notifier)
         {
             this.settingsModel = settings;
             this.progressNotifier = notifier;
             settingsModel.ShowProgressBar = true;
 
+            // مقداردهی اولیه SemaphoreSlim با حداکثر تعداد تردها
             semaphore = new SemaphoreSlim(settings.MaxThreads);
             parallelOptions = new ParallelOptions();
             parallelOptions.MaxDegreeOfParallelism = settings.MaxThreads;
         }
 
+        // متد کپی فایل‌ها
+        /// <summary>
+        /// Copies files from source to destination
+        /// </summary>
+        /// <param name="_fileModels">List of FileModel objects containing source and destination paths</param>
+        /// <param name="flowLayoutPanel">FlowLayoutPanel for displaying progress bars</param>
+        /// <param name="cancellationToken">CancellationToken for cancelling the operation</param>
+        /// <returns></returns>
         public async Task CopyFile(List<FileModel> _fileModels, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken)
         {
             try
             {
+                // بررسی لغو عملیات
                 if (cancellationToken.IsCancellationRequested)
                 {
                     return;
                 }
+
+                // ایجاد لیستی از مدل‌های فایل
                 List<FileModel> fileModels = _fileModels.Select(file => new FileModel
                 {
                     Source = file.Source,
                     Destination = file.Destination
                 }).ToList();
 
+                // ایجاد مسیر والد در مقصد در صورت نیاز
                 if (settingsModel.CreateParentPath)
                 {
                     for (int i = 0; i < fileModels.Count; i++)
@@ -74,6 +94,7 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                     .SelectMany(item => Directory.GetFiles(item.Source, "*.*", SearchOption.AllDirectories))
                     .ToList();
 
+                // لیست تمام دایرکتوری‌ها از پوشه‌ها و زیرپوشه‌ها
                 List<string> directories = fileModels.AsParallel()
                     .SelectMany(item => Directory.GetDirectories(item.Source, "*", SearchOption.AllDirectories))
                     .ToList();
@@ -81,6 +102,7 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                 parallelOptions.CancellationToken = cancellationToken;
                 copiedFiles = 0;
 
+                // ایجاد دایرکتوری‌های مقصد به صورت موازی
                 await Task.Run(() =>
                 {
                     Parallel.ForEach(directories, parallelOptions, dirPath =>
@@ -104,10 +126,10 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                     });
                 });
 
-
                 List<Control> controls = new List<Control>();
                 var copyStatusBar = new Dictionary<string, CopyStatusBar>();
 
+                // تعلیق طرح‌بندی FlowLayoutPanel در صورت نمایش ProgressBar
                 if (settingsModel.ShowProgressBar)
                     flowLayoutPanel.Invoke((MethodInvoker)(() =>
                     {
@@ -115,7 +137,6 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                     }));
 
                 // ساخت دیکشنری برای نگهداری مسیر نسبی فایل‌های مبدا
-
                 var fileToRelativePathMap = new Dictionary<string, string>();
 
                 foreach (var file in filesToCopy)
@@ -135,9 +156,10 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
 
                 var destinationFilePathsSet = new HashSet<string>();
 
+                // بررسی وجود مسیر مقصد و افزودن فایل‌های مقصد به مجموعه
                 foreach (var item in fileModels)
                 {
-                    if (Directory.Exists(item.Destination)) // بررسی وجود مسیر مقصد
+                    if (Directory.Exists(item.Destination))
                     {
                         var destinationFiles = Directory.GetFiles(item.Destination, "*.*", SearchOption.AllDirectories);
 
@@ -145,7 +167,7 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                         {
                             var relativePath = GetRelativePathHelper.GetRelativePath(item.Destination, destFile, settingsModel.CreateParentPath);
 
-                            if (!string.IsNullOrEmpty(relativePath)) // جلوگیری از اضافه کردن مسیرهای خالی
+                            if (!string.IsNullOrEmpty(relativePath))
                             {
                                 destinationFilePathsSet.Add(relativePath);
                             }
@@ -155,14 +177,12 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
 
                 // پیدا کردن فایل‌هایی که فقط در مبدا وجود دارند
                 var missingFilesInDestination = fileToRelativePathMap.AsParallel()
-                    .Where(kvp => !destinationFilePathsSet.Contains(kvp.Key)) // بررسی عدم وجود در مقصد
+                    .Where(kvp => !destinationFilePathsSet.Contains(kvp.Key))
                     .Select(kvp => new
                     {
                         SourcePath = kvp.Value, // مسیر کامل فایل در مبدا
                         RelativePath = kvp.Key  // مسیر نسبی فایل
                     });
-
-
 
                 // برای هر فایل که در مقصد وجود ندارد
                 foreach (var kvp in missingFilesInDestination)
@@ -193,7 +213,6 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                         // ذخیره ProgressBar و Label در دیکشنری‌ها
                         copyStatusBar[kvp.RelativePath] = copyStatus;
 
-
                         // افزودن به لیست کنترل‌ها
                         controls.Add(copyStatus);
                     }
@@ -209,8 +228,10 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                     }));
                 }
 
+                // ایجاد CountdownEvent برای همگام‌سازی تسک‌ها
                 var countdown = new CountdownEvent(missingFilesInDestination.Count(file =>
-    !FileCopyManager.Instance.IsFileCopied(file.SourcePath)));
+                    !FileCopyManager.Instance.IsFileCopied(file.SourcePath)));
+
                 // به‌روزرسانی کد برای محاسبه درست مسیرهای نسبی
                 var tasks = missingFilesInDestination.AsParallel()
                     .Where(file => !FileCopyManager.Instance.IsFileCopied(file.SourcePath)) // فقط فایل‌هایی که کپی نشده‌اند
@@ -292,7 +313,8 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                                             FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
                                         }
                                     }
-                                    else {
+                                    else
+                                    {
                                         FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
                                     }
                                 }
@@ -315,9 +337,11 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
 
                     }).Where(task => task != null)
                     .ToList(); // حذف تسک‌های خالی
+
+                // انتظار برای تکمیل تمام تسک‌ها
                 if (tasks.Any())
                 {
-                   // await Task.WhenAll(tasks);
+                    // await Task.WhenAll(tasks);
                 }
                 countdown.Wait();
                 progressNotifier.NotifyCopyCompleted();
@@ -328,6 +352,14 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             }
         }
 
+
+        // متد برای مقداردهی اولیه کامپوننت‌های ProgressBar
+        /// <summary>
+        /// Initializes the components for the progress bar
+        /// </summary>
+        /// <param name="flowLayoutPanel">FlowLayoutPanel for displaying progress bars</param>
+        /// <param name="relativePath">Relative path of the file</param>
+        /// <param name="copyStatusBar">Output parameter for the CopyStatusBar object</param>
         private void InitializeComponent(FlowLayoutPanel flowLayoutPanel, string relativePath, out CopyStatusBar copyStatusBar)
         {
             copyStatusBar = new CopyStatusBar
@@ -342,11 +374,20 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             };
         }
 
+        // متد کپی فایل با استفاده از Stream و نمایش ProgressBar
+        /// <summary>
+        /// Copies a file using streams and updates the progress bar
+        /// </summary>
+        /// <param name="sourceFile">Source file path</param>
+        /// <param name="destFile">Destination file path</param>
+        /// <param name="totalFiles">Total number of files to be copied</param>
+        /// <param name="copyStatusBar">CopyStatusBar object for updating progress</param>
+        /// <param name="cancellationToken">CancellationToken for cancelling the operation</param>
+        /// <returns></returns>
         private async Task CopyFileWithStream(string sourceFile, string destFile, int totalFiles, CopyStatusBar copyStatusBar, CancellationToken cancellationToken)
         {
             try
             {
-
                 int bufferSize = settingsModel.MaxBufferSize * (1024 * 1024); // MB buffer size
 
                 using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, true))
@@ -407,11 +448,19 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             }
         }
 
+        // متد کپی فایل با استفاده از Stream بدون نمایش ProgressBar
+        /// <summary>
+        /// Copies a file using streams without updating the progress bar
+        /// </summary>
+        /// <param name="sourceFile">Source file path</param>
+        /// <param name="destFile">Destination file path</param>
+        /// <param name="totalFiles">Total number of files to be copied</param>
+        /// <param name="cancellationToken">CancellationToken for cancelling the operation</param>
+        /// <returns></returns>
         private async Task CopyFileWithStream(string sourceFile, string destFile, int totalFiles, CancellationToken cancellationToken)
         {
             try
             {
-
                 int bufferSize = settingsModel.MaxBufferSize * (1024 * 1024); // MB buffer size
 
                 using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, true))
@@ -449,6 +498,12 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
         }
 
         // متد بررسی کپی موفق فایل
+        /// <summary>
+        /// Get the hash of the source and destination files and compare them
+        /// </summary>
+        /// <param name="sourceFile">address source file type string</param>
+        /// <param name="destFile">address destination file type string</param>
+        /// <returns>Boolean</returns>
         private bool VerifyFileCopy(string sourceFile, string destFile)
         {
             using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read))

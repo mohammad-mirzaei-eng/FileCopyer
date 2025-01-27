@@ -212,9 +212,9 @@
             // flowLayoutPanel1
             // 
             this.flowLayoutPanel1.AutoScroll = true;
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(318, 132);
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(315, 132);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(470, 284);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(473, 284);
             this.flowLayoutPanel1.TabIndex = 13;
             // 
             // main

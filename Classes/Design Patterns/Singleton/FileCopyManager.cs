@@ -17,32 +17,54 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
 {
     public class FileCopyManager
     {
+        // ایجاد یک نمونه Singleton از FileCopyManager
         private static readonly Lazy<FileCopyManager> _instance = new Lazy<FileCopyManager>(() => new FileCopyManager());
         private IFileCopyStrategy _copyStrategy;
         private CancellationTokenSource _cancellationTokenSource;
 
+        // دیکشنری‌های همزمان برای نگهداری وضعیت فایل‌های در حال کپی و کپی شده
         private ConcurrentDictionary<string, bool> _copyingFiles = new ConcurrentDictionary<string, bool>();
         private ConcurrentDictionary<string, bool> _filesCopied = new ConcurrentDictionary<string, bool>();
 
-        private List<string> _errorList = new List<string>(); // لیست خطاها
+        // لیست خطاها
+        private List<string> _errorList = new List<string>();
 
+        // دسترسی به نمونه Singleton
         public static FileCopyManager Instance => _instance.Value;
 
         private CopyProgressNotifier notifier = new CopyProgressNotifier();
 
+        // سازنده خصوصی برای جلوگیری از ایجاد نمونه‌های جدید
         private FileCopyManager() { }
 
+        // متد ثبت ناظر جدید
+        /// <summary>
+        /// Registers a new observer to receive copy progress notifications
+        /// </summary>
+        /// <param name="observer">The observer to be registered</param>
         public void RegisterObserver(IProgressObserver observer)
         {
             notifier.AddObserver(observer);
         }
 
+        // متد لغو ثبت ناظر
+        /// <summary>
+        /// Unregisters an observer from receiving copy progress notifications
+        /// </summary>
+        /// <param name="observer">The observer to be unregistered</param>
         public void UnregisterObserver(IProgressObserver observer)
         {
             notifier.RemoveObserver(observer);
         }
 
         // متد عمومی برای شروع عملیات کپی
+        /// <summary>
+        /// Starts the file copy operation
+        /// </summary>
+        /// <param name="fileModels">List of FileModel objects to be copied</param>
+        /// <param name="flowLayoutPanel">FlowLayoutPanel for displaying progress bars</param>
+        /// <param name="pgbtotal">ProgressBar for overall progress</param>
+        /// <param name="settings">Optional SettingsModel object for copy settings</param>
         public void StartCopy(List<FileModel> fileModels, FlowLayoutPanel flowLayoutPanel, ProgressBar pgbtotal, SettingsModel settings = null)
         {
             if (IsCopyingInProgress())
@@ -95,6 +117,10 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         }
 
         // متد تولید گزارش خطا
+        /// <summary>
+        /// Generates an error report if there are any errors
+        /// </summary>
+        /// <returns></returns>
         private async Task GenerateErrorReport()
         {
             if (_errorList.Count > 0)
@@ -108,8 +134,12 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
             }
         }
 
-
         // متد عمومی برای مدیریت وضعیت کپی
+        /// <summary>
+        /// Updates the copy status of a file
+        /// </summary>
+        /// <param name="filePath">The path of the file</param>
+        /// <param name="isCopying">Boolean indicating whether the file is being copied</param>
         public void UpdateFileCopyStatus(string filePath, bool isCopying)
         {
             if (isCopying)
@@ -122,28 +152,53 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
                 _filesCopied.TryAdd(filePath, true); // فایل‌هایی که به پایان رسیدند
             }
         }
+
         // متد عمومی برای بررسی وضعیت کپی
+        /// <summary>
+        /// Checks if a file is being copied
+        /// </summary>
+        /// <param name="filePath">The path of the file</param>
+        /// <returns>Boolean indicating whether the file is being copied</returns>
         public bool IsFileBeingCopied(string filePath)
         {
             return _copyingFiles.ContainsKey(filePath);
         }
 
         // متد عمومی برای بررسی اینکه آیا فایل کپی شده است
+        /// <summary>
+        /// Checks if a file has been copied
+        /// </summary>
+        /// <param name="filePath">The path of the file</param>
+        /// <returns>Boolean indicating whether the file has been copied</returns>
         public bool IsFileCopied(string filePath)
         {
             return _filesCopied.ContainsKey(filePath);
         }
 
+        /// <summary>
+        /// Checks if a file copy is in progress
+        /// </summary>
+        /// <param name="filePath">The path of the file</param>
+        /// <returns>Boolean indicating whether the file copy is in progress</returns>
         public bool IsCopyInProgress(string filePath)
         {
             return _copyingFiles.ContainsKey(filePath);
         }
 
+        /// <summary>
+        /// Checks if any file copy is in progress
+        /// </summary>
+        /// <returns>Boolean indicating whether any file copy is in progress</returns>
         public bool IsCopyingInProgress()
         {
             return _copyingFiles.Count > 0;
         }
 
+        // متد انتظار برای تکمیل کپی
+        /// <summary>
+        /// Waits for all file copy operations to complete
+        /// </summary>
+        /// <returns></returns>
         private async Task WaitForCopyCompletion()
         {
             while (IsCopyingInProgress())
@@ -158,7 +213,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         }
 
         /// <summary>
-        /// 
+        /// Clears the list of files being copied
         /// </summary>
         public void ClearCopyingFiles()
         {
@@ -166,7 +221,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         }
 
         /// <summary>
-        /// 
+        /// Clears the list of copied files
         /// </summary>
         public void ClearCopyedFiles()
         {
@@ -174,6 +229,11 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         }
 
         // مدیریت رویداد بستن فرم
+        /// <summary>
+        /// Handles the form closing event
+        /// </summary>
+        /// <param name="sender">The sender of the event</param>
+        /// <param name="e">FormClosingEventArgs containing event data</param>
         public void Form_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (IsCopyingInProgress())
@@ -187,7 +247,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
                     {
                         while (IsCopyingInProgress())
                         {
-                           await WaitForCopyCompletion();
+                            await WaitForCopyCompletion();
                         }
 
                         Application.Exit();
@@ -201,6 +261,9 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         }
 
         // لغو عملیات کپی
+        /// <summary>
+        /// Cancels the file copy operation
+        /// </summary>
         public void CancelCopy()
         {
             if (_cancellationTokenSource != null)
@@ -208,17 +271,29 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
                 _cancellationTokenSource.Cancel();
             }
         }
-        
+
+        /// <summary>
+        /// Adds a list of errors to the error list
+        /// </summary>
+        /// <param name="errors">List of error messages</param>
         public void AddErrors(List<string> errors)
         {
             _errorList.AddRange(errors);
         }
 
+        /// <summary>
+        /// Adds a single error to the error list
+        /// </summary>
+        /// <param name="errors">Error message</param>
         public void AddError(string errors)
         {
             _errorList.Add(errors);
         }
 
+        /// <summary>
+        /// Gets the number of errors in the error list
+        /// </summary>
+        /// <returns>Number of errors</returns>
         public int GetError()
         {
             return _errorList.Count;

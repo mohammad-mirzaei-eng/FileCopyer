@@ -11,10 +11,10 @@ namespace FileCopyer.Classes.Design_Patterns.Helper
     public class HashFileHelper
     {
         /// <summary>
-        /// 
+        /// Convert FileStream to Hash
         /// </summary>
         /// <param name="stream"></param>
-        /// <returns></returns>
+        /// <returns>MD5 Hash type string</returns>
         public string GetFileHash(FileStream stream)
         {
             using (SHA256 sha256 = SHA256.Create())

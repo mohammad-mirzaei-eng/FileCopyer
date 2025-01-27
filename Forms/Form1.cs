@@ -12,14 +12,21 @@ namespace FileCopyer.Forms
 {
     public partial class main : Form, IProgressObserver
     {
+        // مدل تنظیمات
         private SettingsModel settingsModel = new SettingsModel();
-        private List<FileModel> fileModels = new List<FileModel>(); // لیست مدل‌های فایل
+        // لیست مدل‌های فایل
+        private List<FileModel> fileModels = new List<FileModel>();
 
+        // پرچم برای مدیریت اجرای برنامه
         /// <summary>
-        /// 
+        /// Flag to manage the running state of the application
         /// </summary>
-        private bool runApp = false; // پرچم برای مدیریت اجرای برنامه
+        private bool runApp = false;
 
+        // سازنده فرم اصلی
+        /// <summary>
+        /// Initializes a new instance of the main form
+        /// </summary>
         public main()
         {
             InitializeComponent();
@@ -27,6 +34,13 @@ namespace FileCopyer.Forms
             manager.RegisterObserver(this);
         }
 
+        // رویداد کپی شدن فایل
+        /// <summary>
+        /// Event handler for when a file is copied
+        /// </summary>
+        /// <param name="copiedFiles">Number of copied files</param>
+        /// <param name="totalFiles">Total number of files</param>
+        /// <param name="errorFiles">Number of error files</param>
         public void OnFileCopied(int copiedFiles, int totalFiles, int errorFiles)
         {
             Invoke(new Action(() =>
@@ -49,6 +63,10 @@ namespace FileCopyer.Forms
             }));
         }
 
+        // رویداد اتمام کپی
+        /// <summary>
+        /// Event handler for when the copy process is completed
+        /// </summary>
         public void OnCopyCompleted()
         {
             Invoke(new Action(() =>
@@ -58,6 +76,12 @@ namespace FileCopyer.Forms
             }));
         }
 
+        // رویداد کلیک دکمه کپی فایل‌ها
+        /// <summary>
+        /// Handles the Click event of the CopyFiles button
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">Event data</param>
         private void CopyFilesButton_Click(object sender, EventArgs e)
         {
             try
@@ -95,22 +119,46 @@ namespace FileCopyer.Forms
             }
         }
 
+        // رویداد بارگذاری فرم
+        /// <summary>
+        /// Handles the Load event of the form
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">Event data</param>
         private void Form1_Load(object sender, EventArgs e)
         {
             LoadFileModels(); // بارگذاری مدل‌های فایل
         }
 
+        // رویداد بستن فرم
+        /// <summary>
+        /// Handles the FormClosing event of the form
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">FormClosingEventArgs containing event data</param>
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             var manager = FileCopyManager.Instance;
             manager.Form_FormClosing(sender, e);
         }
 
+        // رویداد کلیک بر روی برچسب تعداد فایل‌های کپی شده
+        /// <summary>
+        /// Handles the Click event of the lbltotalcopied label
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">Event data</param>
         private void lbltotalcopied_Click(object sender, EventArgs e)
         {
             lbltotalcopied.Text = $"Copied {totalbar.Value}/{totalbar.Maximum} files.";
         }
 
+        // رویداد کلیک دکمه تنظیمات
+        /// <summary>
+        /// Handles the Click event of the settings button
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">Event data</param>
         private void button1_Click(object sender, EventArgs e)
         {
             using (frmSetting frmSetting = new frmSetting())
@@ -120,6 +168,10 @@ namespace FileCopyer.Forms
             }
         }
 
+        // بارگذاری مدل‌های فایل
+        /// <summary>
+        /// Loads the file models and settings from binary files
+        /// </summary>
         private void LoadFileModels()
         {
             fileModels = BinarySerializationHelper.LoadFileModels();
@@ -136,6 +188,12 @@ namespace FileCopyer.Forms
             }
         }
 
+        // رویداد تغییر اندازه فرم
+        /// <summary>
+        /// Handles the SizeChanged event of the form
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">Event data</param>
         private void Form1_SizeChanged(object sender, EventArgs e)
         {
             if (this.WindowState == FormWindowState.Minimized)
@@ -150,12 +208,24 @@ namespace FileCopyer.Forms
             }
         }
 
+        // رویداد کلیک بر روی گزینه نمایش برنامه
+        /// <summary>
+        /// Handles the Click event of the showappcms context menu item
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">Event data</param>
         private void showappcms_Click(object sender, EventArgs e)
         {
             notifyIcon1.Visible = false;
             this.Show();
         }
 
+        // رویداد دوبار کلیک بر روی آیکون نوتیفیکیشن
+        /// <summary>
+        /// Handles the MouseDoubleClick event of the notifycontext
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">MouseEventArgs containing event data</param>
         private void notifycontext_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             notifyIcon1.Visible = false;
@@ -164,11 +234,23 @@ namespace FileCopyer.Forms
             this.Show();
         }
 
+        // رویداد کلیک بر روی گزینه خروج از برنامه
+        /// <summary>
+        /// Handles the Click event of the exitappcms context menu item
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">Event data</param>
         private void exitappcms_Click(object sender, EventArgs e)
         {
             this.Close(); // بستن فرم
         }
 
+        // رویداد کلیک بر روی گزینه حذف
+        /// <summary>
+        /// Handles the Click event of the toolStripDell tool strip item
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">Event data</param>
         private void toolStripDell_Click(object sender, EventArgs e)
         {
             if (listBox1.SelectedItems != null && listBox1.SelectedItems.Count > 0)

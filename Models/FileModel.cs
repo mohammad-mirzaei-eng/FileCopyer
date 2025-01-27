@@ -37,14 +37,15 @@ namespace FileCopyer.Models
             }
         }
 
+        // متدی که نام فایل را برمی‌گرداند
         /// <summary>
-        /// 
+        /// نام فایل را از مسیر مبدا برمی‌گرداند
         /// </summary>
         public string GetName
         {
             get
             {
-                // اگر هر دو مسیر مبدا و مقصد تعیین شده باشند، آنها را برمی‌گرداند
+                // اگر هر دو مسیر مبدا و مقصد تعیین شده باشند، نام فایل را برمی‌گرداند
                 if (!string.IsNullOrEmpty(Source) && !string.IsNullOrEmpty(Destination))
                 {
                     return $"{Path.GetFileName(Source)}";

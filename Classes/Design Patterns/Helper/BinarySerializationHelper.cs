@@ -12,11 +12,12 @@ namespace FileCopyer.Classes.Design_Patterns.Helper
 {
     internal static class BinarySerializationHelper
     {
+        // متد دریافت مسیر فایل
         /// <summary>
-        /// 
+        /// Gets the file path for storing serialized data
         /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
+        /// <param name="model">Boolean indicating whether to get the path for file models or settings</param>
+        /// <returns>File path as a string</returns>
         private static string GetFilePath(bool model)
         {
             string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileCopyer");
@@ -27,10 +28,11 @@ namespace FileCopyer.Classes.Design_Patterns.Helper
             return Path.Combine(directory, model ? "fileModels.bin" : "settings.bin");
         }
 
+        // متد ذخیره مدل‌های فایل
         /// <summary>
-        /// 
+        /// Saves the list of file models to a binary file
         /// </summary>
-        /// <param name="fileModels"></param>
+        /// <param name="fileModels">List of FileModel objects to be saved</param>
         public static void SaveFileModels(List<FileModel> fileModels)
         {
             string filePath = GetFilePath(true);
@@ -41,10 +43,11 @@ namespace FileCopyer.Classes.Design_Patterns.Helper
             }
         }
 
+        // متد ذخیره تنظیمات
         /// <summary>
-        /// 
+        /// Saves the settings model to a binary file
         /// </summary>
-        /// <param name="settings"></param>
+        /// <param name="settings">SettingsModel object to be saved</param>
         public static void SaveSetting(SettingsModel settings)
         {
             string filePath = GetFilePath(false);
@@ -55,10 +58,11 @@ namespace FileCopyer.Classes.Design_Patterns.Helper
             }
         }
 
+        // متد بارگذاری مدل‌های فایل
         /// <summary>
-        /// 
+        /// Loads the list of file models from a binary file
         /// </summary>
-        /// <returns></returns>
+        /// <returns>List of FileModel objects</returns>
         public static List<FileModel> LoadFileModels()
         {
             try
@@ -76,16 +80,17 @@ namespace FileCopyer.Classes.Design_Patterns.Helper
             }
             catch (Exception)
             {
-                System.Windows.Forms.MessageBox.Show("خطا در نمایش مسیر فایلها ، لطفا دوباره کانفیگ کنید","خطا",System.Windows.Forms.MessageBoxButtons.OK,System.Windows.Forms.MessageBoxIcon.Error);
+                System.Windows.Forms.MessageBox.Show("خطا در نمایش مسیر فایلها ، لطفا دوباره کانفیگ کنید", "خطا", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                 return new List<FileModel>();
             }
         }
-        
+
+        // متد بارگذاری مدل‌های فایل از مسیر مشخص
         /// <summary>
-        /// 
+        /// Loads the list of file models from a specified binary file
         /// </summary>
-        /// <param name="file"></param>
-        /// <returns></returns>
+        /// <param name="file">Path to the binary file</param>
+        /// <returns>List of FileModel objects</returns>
         public static List<FileModel> LoadFileModels(string file)
         {
             if (!File.Exists(file))
@@ -97,12 +102,13 @@ namespace FileCopyer.Classes.Design_Patterns.Helper
                 BinaryFormatter formatter = new BinaryFormatter();
                 return (List<FileModel>)formatter.Deserialize(fs);
             }
-        }  
-        
+        }
+
+        // متد بارگذاری تنظیمات
         /// <summary>
-        /// 
+        /// Loads the settings model from a binary file
         /// </summary>
-        /// <returns></returns>
+        /// <returns>SettingsModel object</returns>
         public static SettingsModel LoadFileSettingsModels()
         {
             try
@@ -123,7 +129,6 @@ namespace FileCopyer.Classes.Design_Patterns.Helper
                 System.Windows.Forms.MessageBox.Show("خطا در دریافت تنظیمات ، لطفا دوباره کانفیگ کنید", "خطا", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                 return new SettingsModel();
             }
-            
         }
     }
 }
