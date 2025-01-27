@@ -1,6 +1,6 @@
 ﻿namespace FileCopyer.Forms
 {
-    partial class Form1
+    partial class main
     {
         /// <summary>
         /// Required designer variable.
@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(main));
             this.btnstart = new System.Windows.Forms.Button();
             this.listBox1 = new System.Windows.Forms.ListBox();
             this.listboxcontext = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -44,13 +44,12 @@
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitappcms = new System.Windows.Forms.ToolStripMenuItem();
             this.totalbar = new System.Windows.Forms.ProgressBar();
-            this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.lblcopeid = new System.Windows.Forms.Label();
             this.lbltotalcopied = new System.Windows.Forms.Label();
             this.lblstatus = new System.Windows.Forms.Label();
-            this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.listboxcontext.SuspendLayout();
             this.notifycontext.SuspendLayout();
             this.SuspendLayout();
@@ -63,7 +62,7 @@
             this.btnstart.TabIndex = 0;
             this.btnstart.Text = "شروع";
             this.btnstart.UseVisualStyleBackColor = true;
-            this.btnstart.Click += new System.EventHandler(this.btnstart_Click);
+            this.btnstart.Click += new System.EventHandler(this.CopyFilesButton_Click);
             // 
             // listBox1
             // 
@@ -74,19 +73,18 @@
             this.listBox1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.listBox1.Size = new System.Drawing.Size(297, 420);
             this.listBox1.TabIndex = 1;
-            this.listBox1.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.ListBox1_MouseDoubleClick);
             // 
             // listboxcontext
             // 
             this.listboxcontext.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripDell});
             this.listboxcontext.Name = "listboxcontext";
-            this.listboxcontext.Size = new System.Drawing.Size(162, 26);
+            this.listboxcontext.Size = new System.Drawing.Size(167, 26);
             // 
             // toolStripDell
             // 
             this.toolStripDell.Name = "toolStripDell";
-            this.toolStripDell.Size = new System.Drawing.Size(161, 22);
+            this.toolStripDell.Size = new System.Drawing.Size(166, 22);
             this.toolStripDell.Text = "حذف مسیر انتخابی";
             this.toolStripDell.Click += new System.EventHandler(this.toolStripDell_Click);
             // 
@@ -113,7 +111,6 @@
             // 
             this.notifyIcon1.ContextMenuStrip = this.notifycontext;
             this.notifyIcon1.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon1.Icon")));
-            this.notifyIcon1.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon1_MouseDoubleClick);
             // 
             // notifycontext
             // 
@@ -124,56 +121,49 @@
             this.toolStripSeparator1,
             this.exitappcms});
             this.notifycontext.Name = "contextMenuStrip1";
-            this.notifycontext.Size = new System.Drawing.Size(142, 82);
+            this.notifycontext.Size = new System.Drawing.Size(150, 82);
+            this.notifycontext.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.notifycontext_MouseDoubleClick);
             // 
             // toolStripstatus
             // 
             this.toolStripstatus.Name = "toolStripstatus";
-            this.toolStripstatus.Size = new System.Drawing.Size(141, 22);
+            this.toolStripstatus.Size = new System.Drawing.Size(149, 22);
             this.toolStripstatus.Text = "وضعیت : False";
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(138, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(146, 6);
             // 
             // showappcms
             // 
             this.showappcms.Name = "showappcms";
-            this.showappcms.Size = new System.Drawing.Size(141, 22);
+            this.showappcms.Size = new System.Drawing.Size(149, 22);
             this.showappcms.Text = "نمایش برنامه";
             this.showappcms.Click += new System.EventHandler(this.showappcms_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(138, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(146, 6);
             // 
             // exitappcms
             // 
             this.exitappcms.Name = "exitappcms";
-            this.exitappcms.Size = new System.Drawing.Size(141, 22);
+            this.exitappcms.Size = new System.Drawing.Size(149, 22);
             this.exitappcms.Text = "خروج";
             this.exitappcms.Click += new System.EventHandler(this.exitappcms_Click);
             // 
             // totalbar
             // 
-            this.totalbar.Location = new System.Drawing.Point(315, 357);
+            this.totalbar.Location = new System.Drawing.Point(315, 103);
             this.totalbar.Name = "totalbar";
             this.totalbar.Size = new System.Drawing.Size(473, 23);
             this.totalbar.TabIndex = 4;
             // 
-            // label2
-            // 
-            this.label2.AutoEllipsis = true;
-            this.label2.Location = new System.Drawing.Point(315, 331);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(473, 23);
-            this.label2.TabIndex = 6;
-            // 
             // label3
             // 
-            this.label3.Location = new System.Drawing.Point(669, 285);
+            this.label3.Location = new System.Drawing.Point(669, 54);
             this.label3.Name = "label3";
             this.label3.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.label3.Size = new System.Drawing.Size(107, 23);
@@ -183,7 +173,7 @@
             // 
             // label4
             // 
-            this.label4.Location = new System.Drawing.Point(676, 308);
+            this.label4.Location = new System.Drawing.Point(676, 77);
             this.label4.Name = "label4";
             this.label4.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.label4.Size = new System.Drawing.Size(100, 23);
@@ -194,7 +184,7 @@
             // lblcopeid
             // 
             this.lblcopeid.AutoEllipsis = true;
-            this.lblcopeid.Location = new System.Drawing.Point(315, 285);
+            this.lblcopeid.Location = new System.Drawing.Point(315, 54);
             this.lblcopeid.Name = "lblcopeid";
             this.lblcopeid.Size = new System.Drawing.Size(348, 23);
             this.lblcopeid.TabIndex = 9;
@@ -203,41 +193,42 @@
             // lbltotalcopied
             // 
             this.lbltotalcopied.AutoEllipsis = true;
-            this.lbltotalcopied.Location = new System.Drawing.Point(315, 308);
+            this.lbltotalcopied.Location = new System.Drawing.Point(315, 77);
             this.lbltotalcopied.Name = "lbltotalcopied";
-            this.lbltotalcopied.Size = new System.Drawing.Size(348, 23);
+            this.lbltotalcopied.Size = new System.Drawing.Size(355, 23);
             this.lbltotalcopied.TabIndex = 10;
             this.lbltotalcopied.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lbltotalcopied.Click += new System.EventHandler(this.lbltotalcopied_Click);
             // 
             // lblstatus
             // 
             this.lblstatus.AutoEllipsis = true;
-            this.lblstatus.Location = new System.Drawing.Point(315, 256);
+            this.lblstatus.Location = new System.Drawing.Point(315, 25);
             this.lblstatus.Name = "lblstatus";
             this.lblstatus.Size = new System.Drawing.Size(473, 29);
             this.lblstatus.TabIndex = 11;
             this.lblstatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // progressBar1
+            // flowLayoutPanel1
             // 
-            this.progressBar1.Location = new System.Drawing.Point(315, 393);
-            this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(473, 23);
-            this.progressBar1.TabIndex = 12;
+            this.flowLayoutPanel1.AutoScroll = true;
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(315, 132);
+            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(473, 284);
+            this.flowLayoutPanel1.TabIndex = 13;
             // 
-            // Form1
+            // main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.progressBar1);
+            this.Controls.Add(this.flowLayoutPanel1);
             this.Controls.Add(this.lblstatus);
             this.Controls.Add(this.lbltotalcopied);
             this.Controls.Add(this.lblcopeid);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
-            this.Controls.Add(this.label2);
             this.Controls.Add(this.totalbar);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.label1);
@@ -246,7 +237,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.Name = "Form1";
+            this.Name = "main";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
@@ -270,7 +261,6 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem exitappcms;
         private System.Windows.Forms.ProgressBar totalbar;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label lblcopeid;
@@ -280,7 +270,7 @@
         private System.Windows.Forms.ToolStripMenuItem toolStripDell;
         private System.Windows.Forms.ToolStripMenuItem toolStripstatus;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
-        private System.Windows.Forms.ProgressBar progressBar1;
+        private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
     }
 }
 

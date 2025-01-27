@@ -25,17 +25,24 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>full</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>it.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.TestPlatform.TestFramework, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\MSTest.TestFramework.3.7.2\lib\net462\Microsoft.VisualStudio.TestPlatform.TestFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.TestPlatform.TestFramework.Extensions, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\MSTest.TestFramework.3.7.2\lib\net462\Microsoft.VisualStudio.TestPlatform.TestFramework.Extensions.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -49,14 +56,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\Design Patterns\Helper\GetRelativePathHelper.cs" />
+    <Compile Include="Classes\Design Patterns\Strategy\DefaultCopyStrategy.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\GenerateReportHelper.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\GetNewFilePathHelper.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\HashFileHelper.cs" />
+    <Compile Include="Classes\Design Patterns\Observer\CopyProgressNotifier.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\SerializationHelper.cs" />
     <Compile Include="Forms\CustomFolderBrowserForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\CustomFolderBrowserForm.Designer.cs">
       <DependentUpon>CustomFolderBrowserForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Classes\FileCopyManager.cs" />
-    <Compile Include="Classes\FileModel.cs" />
+    <Compile Include="Classes\Design Patterns\Singleton\FileCopyManager.cs" />
+    <Compile Include="Interface\Design Patterns\Observer\IProgressObserver.cs" />
+    <Compile Include="Models\FileModel.cs" />
     <Compile Include="Forms\Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -69,10 +84,18 @@
     <Compile Include="Forms\frmSetting.Designer.cs">
       <DependentUpon>frmSetting.cs</DependentUpon>
     </Compile>
+    <Compile Include="Interface\Design Patterns\Strategy\IFileCopyStrategy.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Classes\BinarySerializationHelper.cs" />
-    <Compile Include="Classes\SettingsModel.cs" />
+    <Compile Include="Classes\Design Patterns\Helper\BinarySerializationHelper.cs" />
+    <Compile Include="Models\SettingsModel.cs" />
+    <Compile Include="Test\DefaultCopyStrategyTests.cs" />
+    <Compile Include="UserControls\CopyStatusBar.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\CopyStatusBar.Designer.cs">
+      <DependentUpon>CopyStatusBar.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="Forms\CustomFolderBrowserForm.resx">
       <DependentUpon>CustomFolderBrowserForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -92,6 +115,10 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="UserControls\CopyStatusBar.resx">
+      <DependentUpon>CopyStatusBar.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -107,6 +134,13 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="it.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Interface\Design Patterns\Factory Method\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="packages\MSTest.Analyzers.3.7.2\analyzers\dotnet\cs\MSTest.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="packages\MSTest.Analyzers.3.7.2\analyzers\dotnet\cs\MSTest.Analyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
