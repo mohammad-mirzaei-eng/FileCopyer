@@ -1,62 +1,54 @@
-# FileCopyer
+# FileCopyer / کپی کننده فایل
 
-FileCopyer is a powerful, multi-threaded file copying tool designed to efficiently copy files and directories, handle errors, and generate comprehensive reports.
+A powerful file copying utility with multi-threading support and progress monitoring capabilities.
 
-## Features
+یک ابزار قدرتمند برای کپی فایل با پشتیبانی از چند نخ و قابلیت نظارت بر پیشرفت.
 
-- **Multi-threaded copying**: Utilizes multiple threads to speed up the copying process.
-- **File integrity verification**: Ensures copied files are identical to the source files using SHA-256 hashing.
-- **Error handling**: Captures and logs errors during the copying process.
-- **Temporary file handling**: Option to use temporary files during the copying process to prevent corruption.
-- **Directory synchronization**: Identifies and copies new or modified files from the source to the destination.
-- **User-friendly UI**: Easy-to-use Windows Forms application with real-time status updates.
-- **Exit safety**: Ensures safe exit by waiting for ongoing operations to complete before closing the application.
-- **Reports**: Generates detailed reports of the copying process, including errors and statistics.
-- **Parametric**: Run app in cmd without UI
-  
-## Installation
+## Features / ویژگی‌ها
 
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/yourusername/FileCopyer.git
-    ```
-2. Open the solution in Visual Studio.
-3. Build the project to restore the necessary packages and dependencies.
+- Multi-threaded file copying / کپی فایل چند نخی
+- Progress monitoring with visual feedback / نظارت بر پیشرفت با بازخورد تصویری 
+- Deep file verification / تأیید عمیق فایل
+- Command-line interface support / پشتیبانی از رابط خط فرمان
+- Configurable buffer size / اندازه بافر قابل تنظیم
+- Parent path creation option / گزینه ایجاد مسیر والد
+- Error logging and reporting / ثبت و گزارش خطا
 
-## Usage
+## Usage / نحوه استفاده
 
-1. Launch the application.
-2. Use the settings form to specify source and destination directories.
-3. Click "Start" to begin the copying process.
-4. Monitor the progress and status in real-time via the UI.
-5. Click "Stop" to pause or end the copying process.
+FileCopyer.exe C:\\SourceFolder C:\\DestinationFolder --maxThreads 4
 
-## Configuration
-To configure the application settings, follow these steps:
+### GUI Mode / حالت رابط گرافیکی
 
-Open the settings form by clicking on the "Settings" button.
-Add or remove source and destination directories.
-Save the configurations.
-Contributing
+1. Launch the application / برنامه را اجرا کنید
+2. Configure settings / تنظیمات را پیکربندی کنید
+3. Select source and destination / مبدا و مقصد را انتخاب کنید
+4. Click "Copy" to start / برای شروع روی "کپی" کلیک کنید
 
-Contributions are welcome! Please follow these steps:
+### CLI Mode / حالت خط فرمان
 
-Fork the repository.
-Create your feature branch (git checkout -b feature/your-feature).
-Commit your changes (git commit -m 'Add some feature').
-Push to the branch (git push origin feature/your-feature).
-Open a pull request.
-License
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-Acknowledgements
-Special thanks to all contributors and users who have provided feedback and suggestions.
-Contact
-If you have any questions, feel free to reach out:
+FileCopyer.exe <source> <destination> [options]
+Options / گزینه‌ها: 
+--maxThreads <number>       Set maximum threads / تنظیم حداکثر تعداد نخ‌ها 
+--createParentPath          Create parent path / ایجاد مسیر والد 
+--showProgressBar          Show progress bar / نمایش نوار پیشرفت 
+--checkFileDeep            Perform deep file check / انجام بررسی عمیق فایل 
+--maxBufferSize <number>    Set buffer size (MB) / تنظیم اندازه بافر
 
 
-**Email:** mthreat[dot]mob[at]gmail[dot]com
+## System Requirements / نیازمندی‌های سیستم
 
-**GitHub:** mohammad-mirzaei-eng
+- .NET Framework 4.8.1
+- Windows OS
 
-Happy copying! 😊
+## Building / ساخت
+
+Open the solution in Visual Studio 2022 and build.
+
+پروژه را در Visual Studio 2022 باز کرده و بسازید.
+
+## License / مجوز
+
+Copyright © 2024. All rights reserved.
+
+حق کپی‌رایت محفوظ است © ۲۰۲۴
