@@ -18,10 +18,37 @@ namespace FileCopyer
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            if (args.Length >= 2)
+            if (args.Length >= 1)
             {
+                if (args.Contains("--help"))
+                {
+                    ShowHelp();
+                    return;
+                }
+                else if (args.Length < 2)
+                {
+                    Console.WriteLine("Error: Source and destination paths are required.");
+                    ShowHelp();
+                    return;
+                }
+                RunCLI(args);
+            }
+            else
+            {
+                Application.Run(new FileCopyer.Forms.main());
+            }
+        }
+
+        static void RunCLI(string[] args)
+        {
+            try
+            {
+                Console.WriteLine("Starting file copy process...");
                 string source = args[0];
                 string destination = args[1];
+
+                Console.WriteLine($"Source: {source}");
+                Console.WriteLine($"Destination: {destination}");
 
                 var settings = new SettingsModel
                 {
@@ -32,22 +59,28 @@ namespace FileCopyer
                     MaxBufferSize = args.Contains("--maxBufferSize") ? int.Parse(args[Array.IndexOf(args, "--maxBufferSize") + 1]) : 4
                 };
 
+                Console.WriteLine($"Settings: MaxThreads={settings.MaxThreads}, MaxBufferSize={settings.MaxBufferSize}MB");
+
                 var notifier = new CopyProgressNotifier();
+
                 var strategy = new DefaultCopyStrategy(settings, notifier);
 
                 var fileModels = new List<FileModel>
-                        {
-                            new FileModel { Source = source, Destination = destination }
-                        };
+                {
+                    new FileModel { Source = source, Destination = destination }
+                };
 
                 var flowLayoutPanel = new FlowLayoutPanel();
                 var cancellationToken = new CancellationToken();
 
+                Console.WriteLine("Starting copy operation...");
                 strategy.CopyFile(fileModels, flowLayoutPanel, cancellationToken).Wait();
+                Console.WriteLine("Copy operation completed successfully.");
             }
-            else
+            catch (Exception ex)
             {
-                ShowHelp();
+                Console.WriteLine($"Error: {ex.Message}");
+                Environment.Exit(1);
             }
         }
 
