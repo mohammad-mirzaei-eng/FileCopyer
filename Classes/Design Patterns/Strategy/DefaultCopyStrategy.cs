@@ -18,6 +18,18 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
 {
     public class DefaultCopyStrategy : IFileCopyStrategy
     {
+        private class SourceFileToCopy
+        {
+            public string SourcePath { get; set; } // Full path to the source file
+            public string RelativePath { get; set; } // Relative path used for comparison and destination construction
+            public FileModel AssociatedFileModel { get; set; } // The FileModel this source file belongs to
+        }
+
+        // Event declarations
+        public event IFileCopyStrategy.FileCopyStartedHandler OnFileStarted;
+        public event IFileCopyStrategy.FileCopyProgressHandler OnFileProgress;
+        public event IFileCopyStrategy.FileCopyCompletedHandler OnFileCompleted;
+
         // محدود کردن تعداد تردها
         private SemaphoreSlim semaphore;
         ParallelOptions parallelOptions;
@@ -50,328 +62,293 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
         /// Copies files from source to destination
         /// </summary>
         /// <param name="_fileModels">List of FileModel objects containing source and destination paths</param>
-        /// <param name="flowLayoutPanel">FlowLayoutPanel for displaying progress bars</param>
         /// <param name="cancellationToken">CancellationToken for cancelling the operation</param>
         /// <returns></returns>
-        public async Task CopyFile(List<FileModel> _fileModels, FlowLayoutPanel flowLayoutPanel, CancellationToken cancellationToken)
+        public async Task CopyFile(List<FileModel> initialFileModels, CancellationToken cancellationToken)
         {
+            copiedFiles = 0; // Reset overall progress counter
+
             try
             {
-                // بررسی لغو عملیات
+                if (cancellationToken.IsCancellationRequested) return;
+
+                // 1. Adjust destination paths if CreateParentPath is enabled
+                List<FileModel> adjustedFileModels = AdjustDestinationPaths(initialFileModels);
+                if (cancellationToken.IsCancellationRequested) return;
+
+                // 2. Get all source files and directories
+                List<string> allSourceFiles = GetAllSourceFiles(adjustedFileModels);
+                if (cancellationToken.IsCancellationRequested) return;
+
+                List<string> allSourceDirectories = GetAllSourceDirectories(adjustedFileModels);
+                if (cancellationToken.IsCancellationRequested) return;
+
+                // 3. Create destination directory structure
+                // Configure parallelOptions with the cancellationToken for this operation
+                parallelOptions.CancellationToken = cancellationToken;
+                await CreateDestinationDirectories(allSourceDirectories, adjustedFileModels, cancellationToken);
+                if (cancellationToken.IsCancellationRequested) return;
+
+                // 4. Identify missing files that need to be copied
+                // The old logic for populating UI elements for missing files is removed.
+                // That responsibility is now on the UI consuming the events.
+                List<SourceFileToCopy> filesToProcess = IdentifyMissingFiles(allSourceFiles, adjustedFileModels);
+                if (cancellationToken.IsCancellationRequested) return;
+
+                // 5. Execute copy tasks for the identified files
+                if (filesToProcess.Any())
+                {
+                    await ExecuteCopyTasks(filesToProcess, cancellationToken);
+                }
+
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    return;
+                     FileCopyManager.Instance.AddError("عملیات کپی توسط کاربر لغو شد."); // Copy operation was cancelled by the user.
                 }
-
-                // ایجاد لیستی از مدل‌های فایل
-                List<FileModel> fileModels = _fileModels.Select(file => new FileModel
-                {
-                    Source = file.Source,
-                    Destination = file.Destination
-                }).ToList();
-
-                // ایجاد مسیر والد در مقصد در صورت نیاز
-                if (settingsModel.CreateParentPath)
-                {
-                    for (int i = 0; i < fileModels.Count; i++)
-                    {
-                        string sourceFolderName = new DirectoryInfo(fileModels[i].Source).Name;
-                        string destinationFolder = new DirectoryInfo(fileModels[i].Destination).Name;
-                        if (sourceFolderName != destinationFolder)
-                        {
-                            string destinationPath = Path.Combine(fileModels[i].Destination, sourceFolderName);
-                            if (!Directory.Exists(destinationPath))
-                            {
-                                Directory.CreateDirectory(destinationPath);
-                            }
-                            fileModels[i].Destination = destinationPath;
-                        }
-                    }
-                }
-
-                // لیست تمام فایل‌ها از پوشه‌ها و زیرپوشه‌ها
-                List<string> filesToCopy = fileModels.AsParallel()
-                    .SelectMany(item => Directory.GetFiles(item.Source, "*.*", SearchOption.AllDirectories))
-                    .ToList();
-
-                // لیست تمام دایرکتوری‌ها از پوشه‌ها و زیرپوشه‌ها
-                List<string> directories = fileModels.AsParallel()
-                    .SelectMany(item => Directory.GetDirectories(item.Source, "*", SearchOption.AllDirectories))
-                    .ToList();
-
-                parallelOptions.CancellationToken = cancellationToken;
-                copiedFiles = 0;
-
-                // ایجاد دایرکتوری‌های مقصد به صورت موازی
-                await Task.Run(() =>
-                {
-                    Parallel.ForEach(directories, parallelOptions, dirPath =>
-                    {
-                        foreach (var fileModel in fileModels)
-                        {
-                            if (!dirPath.StartsWith(fileModel.Source))
-                                continue;
-
-                            // محاسبه مسیر نسبی
-                            string relativePath = dirPath.Length > fileModel.Source.Length
-                                ? dirPath.Substring(fileModel.Source.Length + 1)
-                                : string.Empty;
-
-                            // ایجاد مسیر جدید در مقصد
-                            string newDirPath = Path.Combine(fileModel.Destination, relativePath);
-
-                            // ساخت دایرکتوری در صورت نیاز (ایجاد فقط اگر وجود ندارد)
-                            Directory.CreateDirectory(newDirPath);
-                        }
-                    });
-                });
-
-                List<Control> controls = new List<Control>();
-                var copyStatusBar = new Dictionary<string, CopyStatusBar>();
-
-                // تعلیق طرح‌بندی FlowLayoutPanel در صورت نمایش ProgressBar
-                if (settingsModel.ShowProgressBar)
-                    flowLayoutPanel.Invoke((MethodInvoker)(() =>
-                    {
-                        flowLayoutPanel.SuspendLayout();
-                    }));
-
-                // ساخت دیکشنری برای نگهداری مسیر نسبی فایل‌های مبدا
-                var fileToRelativePathMap = new Dictionary<string, string>();
-
-                foreach (var file in filesToCopy)
-                {
-                    foreach (var fileModel in fileModels)
-                    {
-                        // تلاش برای یافتن مسیر نسبی
-                        var relativePath = GetRelativePathHelper.GetRelativePath(fileModel.Source, file, settingsModel.CreateParentPath);
-
-                        if (!string.IsNullOrEmpty(relativePath))
-                        {
-                            fileToRelativePathMap[relativePath] = file;
-                            break; // خروج از حلقه پس از یافتن اولین مسیر نسبی معتبر
-                        }
-                    }
-                }
-
-                var destinationFilePathsSet = new HashSet<string>();
-
-                // بررسی وجود مسیر مقصد و افزودن فایل‌های مقصد به مجموعه
-                foreach (var item in fileModels)
-                {
-                    if (Directory.Exists(item.Destination))
-                    {
-                        var destinationFiles = Directory.GetFiles(item.Destination, "*.*", SearchOption.AllDirectories);
-
-                        foreach (var destFile in destinationFiles)
-                        {
-                            var relativePath = GetRelativePathHelper.GetRelativePath(item.Destination, destFile, settingsModel.CreateParentPath);
-
-                            if (!string.IsNullOrEmpty(relativePath))
-                            {
-                                destinationFilePathsSet.Add(relativePath);
-                            }
-                        }
-                    }
-                }
-
-                // پیدا کردن فایل‌هایی که فقط در مبدا وجود دارند
-                var missingFilesInDestination = fileToRelativePathMap.AsParallel()
-                    .Where(kvp => !destinationFilePathsSet.Contains(kvp.Key))
-                    .Select(kvp => new
-                    {
-                        SourcePath = kvp.Value, // مسیر کامل فایل در مبدا
-                        RelativePath = kvp.Key  // مسیر نسبی فایل
-                    });
-
-                // برای هر فایل که در مقصد وجود ندارد
-                foreach (var kvp in missingFilesInDestination)
-                {
-                    // پیدا کردن مدل فایل مرتبط
-                    var fileModel = fileModels.FirstOrDefault(fm => kvp.SourcePath.StartsWith(fm.Source));
-                    if (fileModel == null)
-                        continue; // اگر مدل مرتبط پیدا نشد، از این فایل صرف نظر کنید
-
-                    // محاسبه مسیر نسبی بدون پوشه والد
-                    string relativePath = GetRelativePathHelper.GetRelativePath(fileModel.Source, fileModel.Destination, settingsModel.CreateParentPath);
-
-                    // حذف پوشه والد از مسیر نسبی (اگر وجود داشته باشد)
-                    string sourceFolderName = new DirectoryInfo(fileModel.Source).Name;
-                    if (relativePath.StartsWith(sourceFolderName + Path.DirectorySeparatorChar))
-                    {
-                        relativePath = relativePath.Substring(sourceFolderName.Length + 1);
-                    }
-
-                    // مسیر نهایی فایل در مقصد
-                    string destFile = Path.Combine(fileModel.Destination, relativePath);
-                    // ایجاد ProgressBar و Label فقط در صورت فعال بودن تنظیمات
-                    if (settingsModel.ShowProgressBar)
-                    {
-                        CopyStatusBar copyStatus;
-                        InitializeComponent(flowLayoutPanel, destFile, out copyStatus);
-
-                        // ذخیره ProgressBar و Label در دیکشنری‌ها
-                        copyStatusBar[kvp.RelativePath] = copyStatus;
-
-                        // افزودن به لیست کنترل‌ها
-                        controls.Add(copyStatus);
-                    }
-                }
-
-                // افزودن کنترل‌ها به FlowLayoutPanel به صورت دسته‌ای
-                if (settingsModel.ShowProgressBar && controls.Count > 0)
-                {
-                    flowLayoutPanel.Invoke((MethodInvoker)(() =>
-                    {
-                        flowLayoutPanel.Controls.AddRange(controls.ToArray());
-                        flowLayoutPanel.ResumeLayout();
-                    }));
-                }
-
-                // ایجاد CountdownEvent برای همگام‌سازی تسک‌ها
-                var countdown = new CountdownEvent(missingFilesInDestination.Count(file =>
-                    !FileCopyManager.Instance.IsFileCopied(file.SourcePath)));
-
-                // به‌روزرسانی کد برای محاسبه درست مسیرهای نسبی
-                var tasks = missingFilesInDestination.AsParallel()
-                    .Where(file => !FileCopyManager.Instance.IsFileCopied(file.SourcePath)) // فقط فایل‌هایی که کپی نشده‌اند
-                    .Select(file =>
-                    {
-                        var originalFilePath = filesToCopy.FirstOrDefault(f => Path.GetFullPath(f) == Path.GetFullPath(file.SourcePath));
-                        if (originalFilePath == null) return null; // اگر فایل مبدا پیدا نشد، از کپی صرف نظر کن
-
-                        var fileModel = fileModels.FirstOrDefault(fm => originalFilePath.StartsWith(fm.Source));
-                        if (fileModel == null) return null; // اگر مدل فایل پیدا نشد، از کپی صرف نظر کن
-
-                        // اصلاح مسیر مقصد
-                        // string relativePath = GetRelativePathHelper.GetRelativePath(fileModel.Source, originalFilePath, settingsModel.CreateParentPath);
-                        // string sourceFolderName = new DirectoryInfo(fileModel.Source).Name;
-                        // if (relativePath.StartsWith(sourceFolderName))
-                        // {
-                        // relativePath = relativePath.Substring(sourceFolderName.Length + 1);
-                        // }
-                        string destFile = Path.Combine(fileModel.Destination, file.RelativePath);
-
-                        // Check if the destination file exists and if we should not overwrite
-                        if (File.Exists(destFile) && !settingsModel.OverwriteFiles)
-                        {
-                            FileCopyManager.Instance.AddError($"فایل {file.SourcePath} در مقصد وجود دارد و تنظیم بازنویسی غیرفعال است. از کپی صرف نظر شد."); // File {file.SourcePath} exists at destination and overwrite setting is disabled. Skipping.
-                            return null;
-                        }
-                        // If OverwriteFiles is true, or if the file doesn't exist, proceed to copy.
-                        // The CopyFileWithStream uses FileMode.Create for the .temp file, which overwrites if .temp exists.
-                        // The RenameFile method handles deleting the original destFile if it exists before moving the .temp file.
-
-                        // ایجاد Task برای کپی فایل
-                        return Task.Run(async () =>
-                        {
-                            await semaphore.WaitAsync();
-                            try
-                            {
-                                if (!FileCopyManager.Instance.IsFileBeingCopied(file.SourcePath))
-                                {
-                                    FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, true); // به‌روزرسانی وضعیت کپی شدن فایل
-                                    if (settingsModel.ShowProgressBar && copyStatusBar.ContainsKey(file.RelativePath))
-                                    {
-                                        await CopyFileWithStream(originalFilePath, destFile, missingFilesInDestination.AsParallel().Count(), copyStatusBar[file.RelativePath], cancellationToken).ConfigureAwait(false); // کپی فایل
-                                        bool check_deep_result = VerifyFileCopy(originalFilePath, destFile, !settingsModel.CheckFileDeep);
-                                        if (check_deep_result)
-                                        {
-                                            FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
-                                        }
-                                        else
-                                        {
-                                            FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
-                                        }
-                                    }
-                                    else if (settingsModel.ShowProgressBar == false)
-                                    {
-                                        await CopyFileWithStream(originalFilePath, destFile, missingFilesInDestination.AsParallel().Count(), cancellationToken).ConfigureAwait(false); // کپی فایل
-                                        bool check_deep_result = VerifyFileCopy(originalFilePath, destFile, !settingsModel.CheckFileDeep);
-
-                                        if (check_deep_result)
-                                        {
-                                            FileCopyManager.Instance.UpdateFileCopyStatus(file.SourcePath, false); // به‌روزرسانی وضعیت کپی شده
-                                        }
-                                        else
-                                        {
-                                            FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
-                                        }
-                                    }
-                                    else
-                                    {
-                                        FileCopyManager.Instance.AddError($"File copy failed for {originalFilePath}");
-                                    }
-                                }
-                                else
-                                {
-                                    FileCopyManager.Instance.AddError($"فایل {file.SourcePath} در صف کپی هست");
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                FileCopyManager.Instance.AddError($"خطا در کپی فایل {file.SourcePath}: {ex.Message}");
-                                FileCopyManager.Instance.UpdateFileCopyStatus(destFile, false);
-                            }
-                            finally
-                            {
-                                semaphore.Release();
-                                countdown.Signal();
-                            }
-                        }, cancellationToken);
-
-                    }).Where(task => task != null)
-                    .ToList(); // حذف تسک‌های خالی
-
-                // انتظار برای تکمیل تمام تسک‌ها
-                if (tasks.Any())
-                {
-                    // await Task.WhenAll(tasks);
-                }
-                countdown.Wait();
-                progressNotifier.NotifyCopyCompleted();
+            }
+            catch (OperationCanceledException)
+            {
+                FileCopyManager.Instance.AddError("عملیات کپی لغو شد."); // Copy operation was cancelled.
             }
             catch (Exception ex)
             {
-                FileCopyManager.Instance.AddError(ex.Message);
+                FileCopyManager.Instance.AddError($"خطای کلی در عملیات کپی: {ex.Message}"); // General error in copy operation
+            }
+            finally
+            {
+                // Notify completion regardless of how it ended (success, error, cancelled)
+                // The FileCopyManager might have its own logic for this, but the strategy signals its part is done.
+                progressNotifier.NotifyCopyCompleted();
             }
         }
 
-
-        // متد برای مقداردهی اولیه کامپوننت‌های ProgressBar
-        /// <summary>
-        /// Initializes the components for the progress bar
-        /// </summary>
-        /// <param name="flowLayoutPanel">FlowLayoutPanel for displaying progress bars</param>
-        /// <param name="relativePath">Relative path of the file</param>
-        /// <param name="copyStatusBar">Output parameter for the CopyStatusBar object</param>
-        private void InitializeComponent(FlowLayoutPanel flowLayoutPanel, string relativePath, out CopyStatusBar copyStatusBar)
+        private List<FileModel> AdjustDestinationPaths(List<FileModel> initialFileModels)
         {
-            copyStatusBar = new CopyStatusBar
+            List<FileModel> adjustedFileModels = initialFileModels.Select(fm => new FileModel { Source = fm.Source, Destination = fm.Destination }).ToList(); // Create a new list to avoid modifying the input list directly if it's from elsewhere
+            if (settingsModel.CreateParentPath)
             {
-                ProgressBarName = relativePath + "_ProgressBar",
-                ProgressBarMinValue = 0,
-                ProgressBarValue = 0,
-                Tag = relativePath,
-                LableText = $"Preparing to copy {Path.GetFileName(relativePath)}...",
-                Width = flowLayoutPanel.ClientRectangle.Width - 25,
-                Top = flowLayoutPanel.Controls.Count * 50
-            };
+                for (int i = 0; i < adjustedFileModels.Count; i++)
+                {
+                    string sourceFolderName = new DirectoryInfo(adjustedFileModels[i].Source).Name;
+                    string destinationFolder = new DirectoryInfo(adjustedFileModels[i].Destination).Name;
+                    if (sourceFolderName != destinationFolder)
+                    {
+                        string destinationPath = Path.Combine(adjustedFileModels[i].Destination, sourceFolderName);
+                        if (!Directory.Exists(destinationPath))
+                        {
+                            Directory.CreateDirectory(destinationPath);
+                        }
+                        adjustedFileModels[i].Destination = destinationPath;
+                    }
+                }
+            }
+            return adjustedFileModels;
         }
 
+        private List<string> GetAllSourceFiles(List<FileModel> fileModels)
+        {
+            return fileModels.AsParallel()
+                .SelectMany(item => Directory.GetFiles(item.Source, "*.*", SearchOption.AllDirectories))
+                .ToList();
+        }
+
+        private List<string> GetAllSourceDirectories(List<FileModel> fileModels)
+        {
+            return fileModels.AsParallel()
+                .SelectMany(item => Directory.GetDirectories(item.Source, "*", SearchOption.AllDirectories))
+                .ToList();
+        }
+
+        private async Task CreateDestinationDirectories(List<string> sourceDirectories, List<FileModel> fileModels, CancellationToken cancellationToken)
+        {
+            // Ensure parallelOptions is configured with the cancellationToken for this specific operation scope if needed
+            // For now, assuming parallelOptions is a class member correctly set up in constructor.
+            // If cancellationToken passed here should be used by Parallel.ForEach, parallelOptions should be local or reconfigured.
+            var localParallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = settingsModel.MaxThreads, // Assuming settingsModel is accessible
+                CancellationToken = cancellationToken
+            };
+
+            await Task.Run(() =>
+            {
+                Parallel.ForEach(sourceDirectories, localParallelOptions, dirPath =>
+                {
+                    cancellationToken.ThrowIfCancellationRequested(); // Check for cancellation
+                    foreach (var fileModel in fileModels)
+                    {
+                        if (!dirPath.StartsWith(fileModel.Source))
+                            continue;
+
+                        string relativePath = dirPath.Length > fileModel.Source.Length
+                            ? dirPath.Substring(fileModel.Source.Length + 1)
+                            : string.Empty;
+
+                        string newDirPath = Path.Combine(fileModel.Destination, relativePath);
+                        Directory.CreateDirectory(newDirPath);
+                    }
+                });
+            }, cancellationToken);
+        }
+
+        private List<SourceFileToCopy> IdentifyMissingFiles(List<string> allSourceFiles, List<FileModel> fileModels)
+        {
+            var fileToRelativePathMap = new Dictionary<string, string>();
+            foreach (var sourceFilePath in allSourceFiles)
+            {
+                foreach (var fileModel in fileModels) // fileModels here are the ones with potentially adjusted destination paths
+                {
+                    var relativePath = GetRelativePathHelper.GetRelativePath(fileModel.Source, sourceFilePath, settingsModel.CreateParentPath);
+                    if (!string.IsNullOrEmpty(relativePath))
+                    {
+                        fileToRelativePathMap[relativePath] = sourceFilePath;
+                        break;
+                    }
+                }
+            }
+
+            var destinationFilePathsSet = new HashSet<string>();
+            // Optimization: Get unique physical destination base paths
+            var uniqueDestinationBasePaths = fileModels.Select(fm => fm.Destination).ToHashSet();
+
+            foreach (var uniqueDestPath in uniqueDestinationBasePaths)
+            {
+                if (Directory.Exists(uniqueDestPath))
+                {
+                    var destinationFiles = Directory.GetFiles(uniqueDestPath, "*.*", SearchOption.AllDirectories);
+                    foreach (var destFileInUniquePath in destinationFiles)
+                    {
+                        // Relative path from the unique destination base path
+                        var relativePath = GetRelativePathHelper.GetRelativePath(uniqueDestPath, destFileInUniquePath, settingsModel.CreateParentPath);
+                        if (!string.IsNullOrEmpty(relativePath))
+                        {
+                            destinationFilePathsSet.Add(relativePath);
+                        }
+                    }
+                }
+            }
+
+            var missingFiles = new List<SourceFileToCopy>();
+            foreach(var kvp in fileToRelativePathMap)
+            {
+                if (!destinationFilePathsSet.Contains(kvp.Key))
+                {
+                    var associatedFileModel = fileModels.FirstOrDefault(fm => kvp.Value.StartsWith(fm.Source));
+                    if (associatedFileModel != null) // Should always find one if logic is correct
+                    {
+                        missingFiles.Add(new SourceFileToCopy
+                        {
+                            SourcePath = kvp.Value, // Full source path
+                            RelativePath = kvp.Key,   // Relative path
+                            AssociatedFileModel = associatedFileModel
+                        });
+                    }
+                }
+            }
+            return missingFiles;
+        }
+
+        private async Task ExecuteCopyTasks(List<SourceFileToCopy> filesToProcess, CancellationToken cancellationToken)
+        {
+            if (!filesToProcess.Any()) return;
+
+            int totalFilesForOverallProgress = filesToProcess.Count; // All files passed here are missing and need processing
+            var countdown = new CountdownEvent(totalFilesForOverallProgress);
+
+            var tasks = filesToProcess.AsParallel()
+                .WithDegreeOfParallelism(settingsModel.MaxThreads) // Use settingsModel for MaxDegreeOfParallelism
+                .WithCancellation(cancellationToken) // Pass cancellationToken to PLINQ query
+                .Select(fileToCopy => // fileToCopy is of type SourceFileToCopy
+                {
+                    // originalFilePath is fileToCopy.SourcePath
+                    // fileModel is fileToCopy.AssociatedFileModel
+                    // file.RelativePath is fileToCopy.RelativePath
+
+                    string destFile = Path.Combine(fileToCopy.AssociatedFileModel.Destination, fileToCopy.RelativePath);
+
+                    if (File.Exists(destFile) && !settingsModel.OverwriteFiles)
+                    {
+                        FileCopyManager.Instance.AddError($"فایل {fileToCopy.SourcePath} در مقصد وجود دارد و تنظیم بازنویسی غیرفعال است. از کپی صرف نظر شد.");
+                        countdown.Signal(); // Signal even if skipped, to not hang countdown.Wait()
+                        return null;
+                    }
+
+                    return Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await semaphore.WaitAsync(cancellationToken); // Pass cancellationToken to semaphore
+                            if (cancellationToken.IsCancellationRequested) return;
+
+                            if (!FileCopyManager.Instance.IsFileBeingCopied(fileToCopy.SourcePath))
+                            {
+                                FileCopyManager.Instance.UpdateFileCopyStatus(fileToCopy.SourcePath, true);
+                                await CopyFileWithStream(fileToCopy.SourcePath, destFile, fileToCopy.RelativePath, totalFilesForOverallProgress, cancellationToken).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                FileCopyManager.Instance.AddError($"فایل {fileToCopy.SourcePath} در صف کپی هست");
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // Handle cancellation specific to this task if needed, though semaphore and PLINQ should handle it.
+                            FileCopyManager.Instance.AddError($"کپی فایل {fileToCopy.SourcePath} لغو شد.");
+                        }
+                        catch (Exception ex)
+                        {
+                            FileCopyManager.Instance.AddError($"خطا در کپی فایل {fileToCopy.SourcePath}: {ex.Message}");
+                            FileCopyManager.Instance.UpdateFileCopyStatus(destFile, false); // Ensure status is updated on error
+                        }
+                        finally
+                        {
+                            semaphore.Release();
+                            countdown.Signal();
+                        }
+                    }, cancellationToken);
+
+                }).Where(task => task != null)
+                .ToList();
+
+            if (tasks.Any())
+            {
+                await Task.WhenAll(tasks); // Wait for all copy tasks to complete or be cancelled
+            }
+            else if (totalFilesForOverallProgress > 0 && !filesToProcess.Any(f => !File.Exists(Path.Combine(f.AssociatedFileModel.Destination, f.RelativePath)) || settingsModel.OverwriteFiles))
+            {
+                // This case handles if all files were skipped by the File.Exists check
+                // and tasks list is empty, but countdown was initialized.
+                // However, countdown.Signal() is called for skipped files, so Wait should not hang.
+                // If tasks list is empty because all files were skipped, countdown should be 0.
+            }
+             if(countdown.CurrentCount > 0 && !cancellationToken.IsCancellationRequested)
+             {
+                // This might indicate an issue if countdown isn't 0 and not cancelled.
+                // For safety, especially if some paths lead to tasks not being created.
+                // However, the .Signal() for skipped files should prevent hangs.
+             }
+            countdown.Wait(cancellationToken); // Wait for all signals, with cancellation support
+        }
+
+
         // متد کپی فایل با استفاده از Stream و نمایش ProgressBar
+        // Signature changed: removed totalFiles, copyStatusBar. Added fileKeyForEvents.
         /// <summary>
         /// Copies a file using streams and updates the progress bar
         /// </summary>
         /// <param name="sourceFile">Source file path</param>
         /// <param name="destFile">Destination file path</param>
-        /// <param name="totalFiles">Total number of files to be copied</param>
-        /// <param name="copyStatusBar">CopyStatusBar object for updating progress</param>
+        /// <param name="fileKeyForEvents">A key (like relativePath) for associating events with the file</param>
+        /// <param name="totalFilesForOverallProgress">Total number of files for overall progress reporting</param>
         /// <param name="cancellationToken">CancellationToken for cancelling the operation</param>
         /// <returns></returns>
-        private async Task CopyFileWithStream(string sourceFile, string destFile, int totalFiles, CopyStatusBar copyStatusBar, CancellationToken cancellationToken)
+        private async Task CopyFileWithStream(string sourceFile, string destFile, string fileKeyForEvents, int totalFilesForOverallProgress, CancellationToken cancellationToken)
         {
             string tempDestFile = destFile + ".temp";
+            OnFileStarted?.Invoke(destFile, fileKeyForEvents); // Invoke OnFileStarted
+            bool success = false;
+            string errorMessage = null;
+
             try
             {
                 int bufferSize = settingsModel.MaxBufferSize * (1024 * 1024); // MB buffer size
@@ -393,25 +370,17 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                         totalBytesRead += bytesRead;
 
                         // بروزرسانی پروگرس بار و لیبل
-                        copyStatusBar.Invoke((MethodInvoker)(() =>
-                        {
-                            copyStatusBar.ProgressBarMaxValue = (int)sourceStream.Length;
-                            copyStatusBar.ProgressBarValue = (int)totalBytesRead;
-                            copyStatusBar.LableText = $"Copying {Path.GetFileName(sourceFile)} ({totalBytesRead / 1024} KB of {sourceStream.Length / 1024} KB)";
-                        }));
+                        double percentage = (double)totalBytesRead / sourceStream.Length * 100;
+                        OnFileProgress?.Invoke(destFile, totalBytesRead, sourceStream.Length, percentage, fileKeyForEvents);
                     }
-                    Interlocked.Increment(ref copiedFiles);
-                    progressNotifier.NotifyFileCopied(copiedFiles, totalFiles, FileCopyManager.Instance.GetError());
-                    copyStatusBar.Invoke((MethodInvoker)(() =>
-                    {
-                        copyStatusBar.LableText = $"Copying {Path.GetFileName(sourceFile)} completed. {copiedFiles}/{totalFiles} files.";
-                    }));
                 }
 
                 if (cancellationToken.IsCancellationRequested)
                 {
+                    errorMessage = "Copying cancelled by user.";
                     if (File.Exists(tempDestFile))
                         File.Delete(tempDestFile);
+                    // success remains false
                 }
                 else
                 {
@@ -420,49 +389,49 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                     {
                         RenameFile(tempDestFile, destFile);
                         FileCopyManager.Instance.UpdateFileCopyStatus(sourceFile, false); // به‌روزرسانی وضعیت کپی شده
+                        Interlocked.Increment(ref copiedFiles); // Increment for overall progress
+                        progressNotifier.NotifyFileCopied(copiedFiles, totalFilesForOverallProgress, FileCopyManager.Instance.GetError()); // Notify overall progress
+                        success = true;
                     }
                     else
                     {
-                        FileCopyManager.Instance.AddError($"File copy failed for {sourceFile}");
+                        errorMessage = "File verification failed.";
+                        FileCopyManager.Instance.AddError($"File copy failed for {sourceFile}: {errorMessage}");
                         if (File.Exists(tempDestFile))
                             File.Delete(tempDestFile);
+                        // success remains false
                     }
                 }
             }
             catch (IOException ioEx)
             {
-                FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {ioEx.Message}");
+                errorMessage = $"IO Error: {ioEx.Message}";
+                FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {errorMessage}");
                 if (File.Exists(tempDestFile))
                     File.Delete(tempDestFile);
-                copyStatusBar.Invoke((MethodInvoker)(() =>
-                {
-                    copyStatusBar.LableText = $"Error copying {Path.GetFileName(sourceFile)}: {ioEx.Message}";
-                }));
+                // success remains false
             }
-            catch (OperationCanceledException ex)
+            catch (OperationCanceledException opEx)
             {
-                FileCopyManager.Instance.AddError($"Copying {Path.GetFileName(sourceFile)} {ex.Message}");
+                errorMessage = $"Copying cancelled: {opEx.Message}";
+                FileCopyManager.Instance.AddError($"Copying {Path.GetFileName(sourceFile)} {errorMessage}");
                 if (File.Exists(tempDestFile))
                     File.Delete(tempDestFile);
-                copyStatusBar.Invoke((MethodInvoker)(() =>
-                {
-                    copyStatusBar.LableText = $"Copying {Path.GetFileName(sourceFile)} {ex.Message}";
-                }));
+                // success remains false
             }
             catch (Exception ex)
             {
-                FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {ex.Message}");
+                errorMessage = $"Generic error: {ex.Message}";
+                FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {errorMessage}");
                 if (File.Exists(tempDestFile))
                     File.Delete(tempDestFile);
-                copyStatusBar.Invoke((MethodInvoker)(() =>
-                {
-                    copyStatusBar.LableText = $"Error copying {Path.GetFileName(sourceFile)}: {ex.Message}";
-                }));
+                // success remains false
             }
             finally
             {
-                // Ensure temp file is deleted if cancellation was requested during the operation
-                if (cancellationToken.IsCancellationRequested && File.Exists(tempDestFile))
+                OnFileCompleted?.Invoke(destFile, success, errorMessage, fileKeyForEvents);
+                // Ensure temp file is deleted if cancellation was requested during the operation and not handled above
+                if (cancellationToken.IsCancellationRequested && File.Exists(tempDestFile) && success == false)
                 {
                     File.Delete(tempDestFile);
                 }
@@ -483,84 +452,14 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
         /// </summary>
         /// <param name="sourceFile">Source file path</param>
         /// <param name="destFile">Destination file path</param>
-        /// <param name="totalFiles">Total number of files to be copied</param>
+        /// <param name="fileKeyForEvents">A key (like relativePath) for associating events with the file</param>
         /// <param name="cancellationToken">CancellationToken for cancelling the operation</param>
         /// <returns></returns>
-        private async Task CopyFileWithStream(string sourceFile, string destFile, int totalFiles, CancellationToken cancellationToken)
-        {
-            string tempDestFile = destFile + ".temp";
-            try
-            {
-                int bufferSize = settingsModel.MaxBufferSize * (1024 * 1024); // MB buffer size
-
-                using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, true))
-                using (FileStream destStream = new FileStream(tempDestFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
-                {
-                    byte[] buffer = new byte[bufferSize];
-                    int bytesRead;
-                    long totalBytesRead = 0;
-
-                    while ((bytesRead = await sourceStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
-                    {
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            break;
-                        }
-                        await destStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
-                        totalBytesRead += bytesRead;
-                    }
-                    Interlocked.Increment(ref copiedFiles);
-                    progressNotifier.NotifyFileCopied(copiedFiles, totalFiles, FileCopyManager.Instance.GetError());
-                }
-
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    if (File.Exists(tempDestFile))
-                        File.Delete(tempDestFile);
-                }
-                else
-                {
-                    bool check_deep_result = VerifyFileCopy(sourceFile, tempDestFile, true);
-                    if (check_deep_result)
-                    {
-                        RenameFile(tempDestFile, destFile);
-                        FileCopyManager.Instance.UpdateFileCopyStatus(sourceFile, false); // به‌روزرسانی وضعیت کپی شده
-                    }
-                    else
-                    {
-                        FileCopyManager.Instance.AddError($"File copy failed for {sourceFile}");
-                        if (File.Exists(tempDestFile))
-                            File.Delete(tempDestFile);
-                    }
-                }
-            }
-            catch (IOException ioEx)
-            {
-                FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {ioEx.Message}");
-                if (File.Exists(tempDestFile))
-                    File.Delete(tempDestFile);
-            }
-            catch (OperationCanceledException ex)
-            {
-                FileCopyManager.Instance.AddError($"Copying {Path.GetFileName(sourceFile)} {ex.Message}");
-                if (File.Exists(tempDestFile))
-                    File.Delete(tempDestFile);
-            }
-            catch (Exception ex)
-            {
-                FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {ex.Message}");
-                if (File.Exists(tempDestFile))
-                    File.Delete(tempDestFile);
-            }
-            finally
-            {
-                // Ensure temp file is deleted if cancellation was requested during the operation
-                if (cancellationToken.IsCancellationRequested && File.Exists(tempDestFile))
-                {
-                    File.Delete(tempDestFile);
-                }
-            }
-        }
+        // This overload is now removed as it's redundant.
+        // private async Task CopyFileWithStream(string sourceFile, string destFile, string fileKeyForEvents, CancellationToken cancellationToken)
+        // {
+        // ... (content of the second overload was here) ...
+        // }
 
         // متد بررسی کپی موفق فایل
         /// <summary>

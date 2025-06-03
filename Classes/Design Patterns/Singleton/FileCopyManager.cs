@@ -20,6 +20,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         // ایجاد یک نمونه Singleton از FileCopyManager
         private static readonly Lazy<FileCopyManager> _instance = new Lazy<FileCopyManager>(() => new FileCopyManager());
         private IFileCopyStrategy _copyStrategy;
+        public IFileCopyStrategy CurrentStrategy { get; private set; } // Added CurrentStrategy
         private CancellationTokenSource _cancellationTokenSource;
 
         // دیکشنری‌های همزمان برای نگهداری وضعیت فایل‌های در حال کپی و کپی شده
@@ -62,10 +63,10 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
         /// Starts the file copy operation
         /// </summary>
         /// <param name="fileModels">List of FileModel objects to be copied</param>
-        /// <param name="flowLayoutPanel">FlowLayoutPanel for displaying progress bars</param>
+        // Removed FlowLayoutPanel flowLayoutPanel parameter
         /// <param name="pgbtotal">ProgressBar for overall progress</param>
         /// <param name="settings">Optional SettingsModel object for copy settings</param>
-        public void StartCopy(List<FileModel> fileModels, FlowLayoutPanel flowLayoutPanel, ProgressBar pgbtotal, SettingsModel settings = null)
+        public void StartCopy(List<FileModel> fileModels, ProgressBar pgbtotal, SettingsModel settings = null)
         {
             if (IsCopyingInProgress())
             {
@@ -81,6 +82,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
             var strategy = new DefaultCopyStrategy(settings, notifier);
 
             _copyStrategy = strategy;
+            this.CurrentStrategy = _copyStrategy; // Set CurrentStrategy
 
             _cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = _cancellationTokenSource.Token;
@@ -90,7 +92,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
                 {
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        await _copyStrategy?.CopyFile(fileModels, flowLayoutPanel, _cancellationTokenSource.Token);
+                        await _copyStrategy?.CopyFile(fileModels, _cancellationTokenSource.Token); // Removed flowLayoutPanel from call
                         await GenerateErrorReport();
                         if (cancellationToken.IsCancellationRequested)
                         {
@@ -112,6 +114,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
                 {
                     // تولید گزارش خطا بعد از پایان عملیات
                     await GenerateErrorReport();
+                    this.CurrentStrategy = null; // Nullify strategy when operation ends (normally or due to error)
                 }
             }, cancellationToken);
         }
@@ -269,6 +272,7 @@ namespace FileCopyer.Classes.Design_Patterns.Singleton
             if (_cancellationTokenSource != null)
             {
                 _cancellationTokenSource.Cancel();
+                this.CurrentStrategy = null; // Nullify strategy on explicit cancellation
             }
         }
 

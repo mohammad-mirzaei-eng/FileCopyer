@@ -12,6 +12,8 @@ namespace FileCopyer.Forms
 {
     public partial class main : Form, IProgressObserver
     {
+        private Dictionary<object, UserInterface.CopyStatusBar> _activeProgressBars = new Dictionary<object, UserInterface.CopyStatusBar>();
+
         // مدل تنظیمات
         private SettingsModel settingsModel = new SettingsModel();
         // لیست مدل‌های فایل
@@ -73,8 +75,79 @@ namespace FileCopyer.Forms
             {
                 lblstatus.BackColor = Color.LimeGreen;
                 toolStripstatus.BackColor = Color.LimeGreen;
+
+                // Final cleanup and unsubscription
+                var strategy = FileCopyManager.Instance.CurrentStrategy;
+                if (strategy != null)
+                {
+                    strategy.OnFileStarted -= HandleFileStarted;
+                    strategy.OnFileProgress -= HandleFileProgress;
+                    strategy.OnFileCompleted -= HandleFileCompleted;
+                }
+                flowLayoutPanel1.Controls.Clear();
+                _activeProgressBars.Clear();
+                runApp = false; // Ensure runApp is false as operation is complete
+                CopyBtn.Text = "اجرا"; // Reset button text
             }));
         }
+
+        private void HandleFileStarted(string filePath, object userState)
+        {
+            Invoke((MethodInvoker)delegate
+            {
+                var bar = new UserInterface.CopyStatusBar
+                {
+                    Name = userState.ToString() + "_ProgressBar", // userState is fileKeyForEvents (relative path)
+                    ProgressBarMinValue = 0,
+                    ProgressBarValue = 0,
+                    LableText = $"Preparing {Path.GetFileName(filePath)}...",
+                    Width = flowLayoutPanel1.ClientRectangle.Width - 25,
+                    Tag = userState // Store the key for later retrieval
+                };
+                _activeProgressBars[userState] = bar;
+                flowLayoutPanel1.Controls.Add(bar);
+            });
+        }
+
+        private void HandleFileProgress(string filePath, long copiedBytes, long totalBytes, double percentage, object userState)
+        {
+            Invoke((MethodInvoker)delegate
+            {
+                if (_activeProgressBars.TryGetValue(userState, out UserInterface.CopyStatusBar bar))
+                {
+                    bar.ProgressBarMaxValue = (int)(totalBytes / 1024); // Assuming KB
+                    bar.ProgressBarValue = (int)(copiedBytes / 1024);  // Assuming KB
+                    bar.LableText = $"Copying {Path.GetFileName(filePath)} ({copiedBytes / 1024}KB / {totalBytes / 1024}KB) - {percentage:F2}%";
+                }
+            });
+        }
+
+        private void HandleFileCompleted(string filePath, bool success, string errorMessage, object userState)
+        {
+            Invoke((MethodInvoker)delegate
+            {
+                if (_activeProgressBars.TryGetValue(userState, out UserInterface.CopyStatusBar bar))
+                {
+                    if (success)
+                    {
+                        bar.LableText = $"{Path.GetFileName(filePath)} completed.";
+                        // Ensure the progress bar is full upon successful completion.
+                        if (bar.ProgressBarMaxValue > 0) // Avoid division by zero if file was empty or very small
+                            bar.ProgressBarValue = bar.ProgressBarMaxValue;
+                        else
+                            bar.ProgressBarValue = 0;
+                    }
+                    else
+                    {
+                        bar.LableText = $"Error {Path.GetFileName(filePath)}: {errorMessage}";
+                        // Optionally change bar color for error state here
+                    }
+                    // Do not remove the bar from _activeProgressBars or flowLayoutPanel1 here.
+                    // Let OnCopyCompleted (overall) handle the final cleanup.
+                }
+            });
+        }
+
 
         // رویداد کلیک دکمه کپی فایل‌ها
         /// <summary>
@@ -90,22 +163,47 @@ namespace FileCopyer.Forms
                 {
                     if (!runApp)
                     {
-                        (sender as Button).Text = "متوقف کردن";
+                        CopyBtn.Text = "متوقف کردن"; // Assuming 'CopyBtn' is the name of the button
                         runApp = true;
                         lblstatus.Text = "درحال آماده سازی مقدمات کپی کردن فایلها";
                         lblstatus.BackColor = Color.LightGoldenrodYellow;
 
-                        FileCopyManager.Instance.StartCopy(
+                        // Clear previous items before starting a new session
+                        flowLayoutPanel1.Controls.Clear();
+                        _activeProgressBars.Clear();
+
+                        FileCopyManager.Instance.StartCopy( // flowLayoutPanel1 is no longer passed here
                             fileModels,
-                            flowLayoutPanel1,
+                            null, // flowLayoutPanel1 was here, now null as strategy handles UI via events
                             totalbar,
                             settingsModel);
+
+                        var strategy = FileCopyManager.Instance.CurrentStrategy;
+                        if (strategy != null)
+                        {
+                            strategy.OnFileStarted += HandleFileStarted;
+                            strategy.OnFileProgress += HandleFileProgress;
+                            strategy.OnFileCompleted += HandleFileCompleted;
+                        }
                     }
                     else
                     {
-                        (sender as Button).Text = "اجرا";
+                        CopyBtn.Text = "اجرا"; // Assuming 'CopyBtn' is the name of the button
                         runApp = false;
-                        FileCopyManager.Instance.CancelCopy();
+
+                        var strategy = FileCopyManager.Instance.CurrentStrategy;
+                        if (strategy != null)
+                        {
+                            // Unsubscribe events when user manually stops
+                            strategy.OnFileStarted -= HandleFileStarted;
+                            strategy.OnFileProgress -= HandleFileProgress;
+                            strategy.OnFileCompleted -= HandleFileCompleted;
+                        }
+                        FileCopyManager.Instance.CancelCopy(); // This will also set CurrentStrategy to null in FileCopyManager
+
+                        // Optional: Clear bars immediately on manual stop, or let OnCopyCompleted handle it if cancellation triggers it.
+                        // flowLayoutPanel1.Controls.Clear();
+                        // _activeProgressBars.Clear();
                     }
                 }
                 else
