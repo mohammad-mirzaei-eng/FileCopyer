@@ -243,25 +243,24 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                         var fileModel = fileModels.FirstOrDefault(fm => originalFilePath.StartsWith(fm.Source));
                         if (fileModel == null) return null; // اگر مدل فایل پیدا نشد، از کپی صرف نظر کن
 
-                        // محاسبه مسیر نسبی بدون پوشه والد
-                        string relativePath = GetRelativePathHelper.GetRelativePath(fileModel.Source, originalFilePath, settingsModel.CreateParentPath);
-
-                        // حذف پوشه والد اضافی
-                        string sourceFolderName = new DirectoryInfo(fileModel.Source).Name;
-                        if (relativePath.StartsWith(sourceFolderName))
-                        {
-                            relativePath = relativePath.Substring(sourceFolderName.Length + 1);
-                        }
-
                         // اصلاح مسیر مقصد
-                        string destFile = Path.Combine(fileModel.Destination, relativePath);
+                        // string relativePath = GetRelativePathHelper.GetRelativePath(fileModel.Source, originalFilePath, settingsModel.CreateParentPath);
+                        // string sourceFolderName = new DirectoryInfo(fileModel.Source).Name;
+                        // if (relativePath.StartsWith(sourceFolderName))
+                        // {
+                        // relativePath = relativePath.Substring(sourceFolderName.Length + 1);
+                        // }
+                        string destFile = Path.Combine(fileModel.Destination, file.RelativePath);
 
-                        // اگر فایل در مقصد وجود داشته باشد، هیچ کاری انجام نمی‌دهیم
-                        if (File.Exists(destFile))
+                        // Check if the destination file exists and if we should not overwrite
+                        if (File.Exists(destFile) && !settingsModel.OverwriteFiles)
                         {
-                            FileCopyManager.Instance.AddError($"فایل {file.SourcePath} در مقصد وجود دارد");
-                            return null; // اگر فایل در مقصد وجود دارد، از کپی صرف نظر کن
+                            FileCopyManager.Instance.AddError($"فایل {file.SourcePath} در مقصد وجود دارد و تنظیم بازنویسی غیرفعال است. از کپی صرف نظر شد."); // File {file.SourcePath} exists at destination and overwrite setting is disabled. Skipping.
+                            return null;
                         }
+                        // If OverwriteFiles is true, or if the file doesn't exist, proceed to copy.
+                        // The CopyFileWithStream uses FileMode.Create for the .temp file, which overwrites if .temp exists.
+                        // The RenameFile method handles deleting the original destFile if it exists before moving the .temp file.
 
                         // ایجاد Task برای کپی فایل
                         return Task.Run(async () =>
@@ -408,20 +407,33 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                         copyStatusBar.LableText = $"Copying {Path.GetFileName(sourceFile)} completed. {copiedFiles}/{totalFiles} files.";
                     }));
                 }
-                bool check_deep_result = VerifyFileCopy(sourceFile, tempDestFile, true);
-                if (check_deep_result)
+
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    RenameFile(tempDestFile, destFile);
-                    FileCopyManager.Instance.UpdateFileCopyStatus(sourceFile, false); // به‌روزرسانی وضعیت کپی شده
+                    if (File.Exists(tempDestFile))
+                        File.Delete(tempDestFile);
                 }
                 else
                 {
-                    FileCopyManager.Instance.AddError($"File copy failed for {sourceFile}");
+                    bool check_deep_result = VerifyFileCopy(sourceFile, tempDestFile, true);
+                    if (check_deep_result)
+                    {
+                        RenameFile(tempDestFile, destFile);
+                        FileCopyManager.Instance.UpdateFileCopyStatus(sourceFile, false); // به‌روزرسانی وضعیت کپی شده
+                    }
+                    else
+                    {
+                        FileCopyManager.Instance.AddError($"File copy failed for {sourceFile}");
+                        if (File.Exists(tempDestFile))
+                            File.Delete(tempDestFile);
+                    }
                 }
             }
             catch (IOException ioEx)
             {
                 FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {ioEx.Message}");
+                if (File.Exists(tempDestFile))
+                    File.Delete(tempDestFile);
                 copyStatusBar.Invoke((MethodInvoker)(() =>
                 {
                     copyStatusBar.LableText = $"Error copying {Path.GetFileName(sourceFile)}: {ioEx.Message}";
@@ -430,6 +442,8 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             catch (OperationCanceledException ex)
             {
                 FileCopyManager.Instance.AddError($"Copying {Path.GetFileName(sourceFile)} {ex.Message}");
+                if (File.Exists(tempDestFile))
+                    File.Delete(tempDestFile);
                 copyStatusBar.Invoke((MethodInvoker)(() =>
                 {
                     copyStatusBar.LableText = $"Copying {Path.GetFileName(sourceFile)} {ex.Message}";
@@ -438,10 +452,20 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
             catch (Exception ex)
             {
                 FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {ex.Message}");
+                if (File.Exists(tempDestFile))
+                    File.Delete(tempDestFile);
                 copyStatusBar.Invoke((MethodInvoker)(() =>
                 {
                     copyStatusBar.LableText = $"Error copying {Path.GetFileName(sourceFile)}: {ex.Message}";
                 }));
+            }
+            finally
+            {
+                // Ensure temp file is deleted if cancellation was requested during the operation
+                if (cancellationToken.IsCancellationRequested && File.Exists(tempDestFile))
+                {
+                    File.Delete(tempDestFile);
+                }
             }
         }
 
@@ -464,12 +488,13 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
         /// <returns></returns>
         private async Task CopyFileWithStream(string sourceFile, string destFile, int totalFiles, CancellationToken cancellationToken)
         {
+            string tempDestFile = destFile + ".temp";
             try
             {
                 int bufferSize = settingsModel.MaxBufferSize * (1024 * 1024); // MB buffer size
 
                 using (FileStream sourceStream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, true))
-                using (FileStream destStream = new FileStream(destFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
+                using (FileStream destStream = new FileStream(tempDestFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
                 {
                     byte[] buffer = new byte[bufferSize];
                     int bytesRead;
@@ -487,18 +512,53 @@ namespace FileCopyer.Classes.Design_Patterns.Strategy
                     Interlocked.Increment(ref copiedFiles);
                     progressNotifier.NotifyFileCopied(copiedFiles, totalFiles, FileCopyManager.Instance.GetError());
                 }
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    if (File.Exists(tempDestFile))
+                        File.Delete(tempDestFile);
+                }
+                else
+                {
+                    bool check_deep_result = VerifyFileCopy(sourceFile, tempDestFile, true);
+                    if (check_deep_result)
+                    {
+                        RenameFile(tempDestFile, destFile);
+                        FileCopyManager.Instance.UpdateFileCopyStatus(sourceFile, false); // به‌روزرسانی وضعیت کپی شده
+                    }
+                    else
+                    {
+                        FileCopyManager.Instance.AddError($"File copy failed for {sourceFile}");
+                        if (File.Exists(tempDestFile))
+                            File.Delete(tempDestFile);
+                    }
+                }
             }
             catch (IOException ioEx)
             {
                 FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {ioEx.Message}");
+                if (File.Exists(tempDestFile))
+                    File.Delete(tempDestFile);
             }
             catch (OperationCanceledException ex)
             {
                 FileCopyManager.Instance.AddError($"Copying {Path.GetFileName(sourceFile)} {ex.Message}");
+                if (File.Exists(tempDestFile))
+                    File.Delete(tempDestFile);
             }
             catch (Exception ex)
             {
                 FileCopyManager.Instance.AddError($"Error copying {Path.GetFileName(sourceFile)}: {ex.Message}");
+                if (File.Exists(tempDestFile))
+                    File.Delete(tempDestFile);
+            }
+            finally
+            {
+                // Ensure temp file is deleted if cancellation was requested during the operation
+                if (cancellationToken.IsCancellationRequested && File.Exists(tempDestFile))
+                {
+                    File.Delete(tempDestFile);
+                }
             }
         }
 

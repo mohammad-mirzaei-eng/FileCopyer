@@ -189,7 +189,7 @@
             this.groupBox1.Location = new System.Drawing.Point(555, 190);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.groupBox1.Size = new System.Drawing.Size(233, 150);
+            this.groupBox1.Size = new System.Drawing.Size(233, 180); // Increased height
             this.groupBox1.TabIndex = 8;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "تنظیمات پیشرفته";
@@ -267,6 +267,17 @@
             this.chkShowProgressBar.UseVisualStyleBackColor = true;
             this.chkShowProgressBar.CheckedChanged += new System.EventHandler(this.chkShowProgressBar_CheckedChanged);
             // 
+            // chkOverwriteFiles
+            //
+            this.chkOverwriteFiles.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.chkOverwriteFiles.AutoSize = true;
+            this.chkOverwriteFiles.Location = new System.Drawing.Point(78, 144);
+            this.chkOverwriteFiles.Name = "chkOverwriteFiles";
+            this.chkOverwriteFiles.Size = new System.Drawing.Size(146, 17);
+            this.chkOverwriteFiles.TabIndex = 20;
+            this.chkOverwriteFiles.Text = "بازنویسی فایل‌های موجود";
+            this.chkOverwriteFiles.UseVisualStyleBackColor = true;
+            //
             // frmSetting
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -322,5 +333,6 @@
         private System.Windows.Forms.CheckBox ChkDeepCheck;
         private System.Windows.Forms.CheckBox chkCreateParent;
         private System.Windows.Forms.CheckBox chkShowProgressBar;
+        private System.Windows.Forms.CheckBox chkOverwriteFiles;
     }
 }

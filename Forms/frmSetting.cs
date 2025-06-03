@@ -63,6 +63,7 @@ namespace FileCopyer.Forms
                 maxBufferSize.Value = settings.MaxBufferSize;
                 chkCreateParent.Checked = settings.CreateParentPath;
                 chkShowProgressBar.Checked = settings.ShowProgressBar;
+                chkOverwriteFiles.Checked = settings.OverwriteFiles; // Load OverwriteFiles setting
             }
         }
 
@@ -288,7 +289,18 @@ namespace FileCopyer.Forms
         /// <param name="e">Event data</param>
         private void chkShowProgressBar_CheckedChanged(object sender, EventArgs e)
         {
-            settings.ShowProgressBar = chkCreateParent.Checked;
+            settings.ShowProgressBar = chkShowProgressBar.Checked; // Corrected from chkCreateParent.Checked
+        }
+
+        // رویداد تغییر وضعیت چک باکس بازنویسی فایل‌ها
+        /// <summary>
+        /// Handles the CheckedChanged event of the chkOverwriteFiles control
+        /// </summary>
+        /// <param name="sender">The source of the event</param>
+        /// <param name="e">Event data</param>
+        private void chkOverwriteFiles_CheckedChanged(object sender, EventArgs e)
+        {
+            settings.OverwriteFiles = chkOverwriteFiles.Checked;
         }
     }
 }

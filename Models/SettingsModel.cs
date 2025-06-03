@@ -20,6 +20,7 @@ namespace FileCopyer.Models
             MaxThreads = 5;
             CreateParentPath = true;
             ShowProgressBar = true;
+            OverwriteFiles = false; // Default to not overwriting files
         }
 
         // حداکثر تعداد تردها
@@ -51,5 +52,11 @@ namespace FileCopyer.Models
         /// Gets or sets a value indicating whether to show the progress bar
         /// </summary>
         public bool ShowProgressBar { get; set; }
+
+        // Overwrite existing files
+        /// <summary>
+        /// Gets or sets a value indicating whether to overwrite existing files at the destination.
+        /// </summary>
+        public bool OverwriteFiles { get; set; }
     }
 }
